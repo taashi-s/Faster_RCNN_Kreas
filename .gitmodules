@@ -1,0 +1,3 @@
+[submodule "ResNet"]
+	path = ResNet
+	url = https://github.com/taashi-s/ResNet_Keras.git
