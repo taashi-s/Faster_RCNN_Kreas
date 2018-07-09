@@ -17,11 +17,14 @@ class RegionProporsal():
         self.layer = Lambda(self.__region_proporsal
                             , output_shape=self.__region_proporsal_output_shape)
 
+
     def __call__(self):
         return self.layer
 
+
     def __region_proporsal(self, inputs):
         return inputs
+
 
     def __region_proporsal_output_shape(self, inputs_shape):
         return inputs_shape
