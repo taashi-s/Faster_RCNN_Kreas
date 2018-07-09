@@ -9,7 +9,7 @@ from keras.models import Model
 from keras.engine.topology import Input
 
 from ResNet.resnet import ResNet
-from rpn import RegionProporsalNet
+from region_proporsal_net import RegionProporsalNet
 
 class TrainTarget(Enum):
     """
