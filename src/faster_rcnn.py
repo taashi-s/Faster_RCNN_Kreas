@@ -8,8 +8,10 @@ import tensorflow as tf
 from keras.models import Model
 from keras.engine.topology import Input
 
-from ResNet.resnet import ResNet
-from region_proporsal_net import RegionProporsalNet
+from subnetwork.resnet.resnet import ResNet
+from subnetwork.rpn.region_proporsal_net import RegionProporsalNet
+from layers.rp_class_loss import RPClassLoss
+from layers.rp_region_loss import RPRegionLoss
 
 class TrainTarget(Enum):
     """
@@ -46,7 +48,9 @@ class FasterRCNN():
         lossees_list = []
         if train_rpn:
             # calculate rpn loss, and append to lossees_list
-            lossees_list += []
+            cla_losses = RPClassLoss()(rpn)
+            reg_losses = RPRegionLoss()(rpn)
+            lossees_list += [cla_losses, reg_losses]
 
         if train_head:
             # add head layer
