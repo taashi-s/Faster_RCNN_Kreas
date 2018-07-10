@@ -7,6 +7,9 @@ from enum import Enum
 import tensorflow as tf
 from keras.models import Model
 from keras.engine.topology import Input
+from keras.layers.wrappers import TimeDistributed
+from keras.layers.core import Dense, Flatten, Activation, Reshape
+from keras.layers.normalization import BatchNormalization
 
 from subnetwork.resnet.resnet import ResNet
 from subnetwork.rpn.region_proporsal_net import RegionProporsalNet
@@ -15,6 +18,7 @@ from layers.rp_region_loss import RPRegionLoss
 from layers.detection_target_region import DetectionTargetRegion
 from layers.class_loss import ClassLoss
 from layers.region_loss import RegionLoss
+from layers.roi_pooling import RoIPooling
 
 class TrainTarget(Enum):
     """
@@ -31,7 +35,7 @@ class FasterRCNN():
     ResNet class
     """
 
-    def __init__(self, input_shape, train_taegets=None):
+    def __init__(self, input_shape, class_num, train_taegets=None):
         self.__input_shape = input_shape
 
         if train_taegets is None:
@@ -63,7 +67,7 @@ class FasterRCNN():
 
         if train_head:
             dtr = DetectionTargetRegion()(rpn)
-            head = self.__head_net(dtr)
+            head = self.__head_net(dtr, class_num)
 
             inputs_cls = Input(shape=[None, 1], dtype='int32')
             inputs_reg = Input(shape=[None, 4], dtype='float32')
@@ -80,20 +84,25 @@ class FasterRCNN():
             self.__model.add_loss(tf.reduce_mean(output, keep_dims=True))
 
 
-    def __head_net(self, inputs):
-        # RoI Pooling
-        # outputs = (N, box, reg_w, reg_h, ch)
+    def __head_net(self, inputs, class_num):
+        roi_pool = RoIPooling()(inputs)
+        flt = TimeDistributed(Flatten())(roi_pool)
 
-        # Conv2 * 2 by box
-        # Use TimeDistributed()
+        fc1 = TimeDistributed(Dense(2048))(flt)
+        norm1 = TimeDistributed(BatchNormalization())(fc1)
+        act1 = TimeDistributed(Activation('relu'))(norm1)
+        fc2 = TimeDistributed(Dense(2048))(act1)
+        norm2 = TimeDistributed(BatchNormalization())(fc2)
+        act2 = TimeDistributed(Activation('relu'))(norm2)
+        outputs = act2
 
-        # Classification by box
-        # Use TimeDistributed()
+        cls_logits = TimeDistributed(Dense(class_num))(outputs)
+        cls_probs = Activation('softmax')(cls_logits)
 
-        # Region Detection by box
-        # Use TimeDistributed()
+        reg_tmp = TimeDistributed(Dense(class_num * 4))(outputs)
+        regions = Reshape([-1, class_num, 4])(reg_tmp)
 
-        return inputs
+        return cls_logits, cls_probs, regions
 
 
     def get_input_size(self):
