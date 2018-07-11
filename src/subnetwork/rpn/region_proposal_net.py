@@ -41,11 +41,11 @@ class RegionproposalNet():
         # [B, h, w, box_by_anchor * 4] -> [B, anchor boxes, 4]
         regions = Reshape([-1, 4])(reg_layer)
 
-        rp_layer = Regionproposal(anchors, image_shape=image_shape
+        prop_regs = Regionproposal(anchors, image_shape=image_shape
                                    , count_limit_post=1000 if is_predict else 2000
                                   )([cls_probs, regions])
 
-        outputs = [cls_logits, cls_probs, regions, rp_layer]
+        outputs = [cls_probs, regions, prop_regs]
         self.__network = outputs
         self.__model = Model(inputs=[inputs], outputs=[outputs])
 

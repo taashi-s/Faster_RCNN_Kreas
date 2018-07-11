@@ -32,7 +32,7 @@ class Regionproposal():
         self.__ref_sd = np.array([0.1, 0.1, 0.2, 0.2])
         if refinement_std_dev is not None:
             self.__ref_sd = refinement_std_dev
-        self.__layer = Lambda(self.__region_proposal
+        self.__layer = Lambda(lambda inputs: self.__region_proposal(*inputs)
                               , output_shape=self.__region_proposal_output_shape)
 
 
@@ -40,9 +40,9 @@ class Regionproposal():
         return self.__layer
 
 
-    def __region_proposal(self, inputs):
-        scores = inputs[0][:, :, 1]
-        offsets = inputs[1] * self.__ref_sd
+    def __region_proposal(self, inputs_scores, inputs_offsets):
+        scores = inputs_scores[:, :, 1]
+        offsets = inputs_offsets * self.__ref_sd
 
         anchor_num = self.__anchors.shape[0]
         limit_pre = min(self.__cl_pre, anchor_num)
