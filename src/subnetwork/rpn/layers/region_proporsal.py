@@ -8,6 +8,9 @@ import tensorflow as tf
 import keras.backend as KB
 from keras.layers.core import Lambda
 
+from utils.regions_utils import RegionsUtils
+from utils.non_maximal_suppression import NMS
+
 class RegionProporsal():
     """
     TODO : Write description
@@ -59,7 +62,7 @@ class RegionProporsal():
 
         bundle_up_regs = KB.reshape(regions, [batch_size * limit_pre, 4])
         bundle_up_offs = KB.reshape(top_offsets, [batch_size * limit_pre, 4])
-        offset_region_tmp = self.__get_offset_region(bundle_up_regs, bundle_up_offs)
+        offset_region_tmp = RegionsUtils(bundle_up_regs).offset(bundle_up_offs)
         if self.__image_shape is not None:
             (img_h, img_w, _) = self.__image_shape
             offset_region_tmp = KB.clip(offset_region_tmp, [0, 0, 0, 0]
@@ -69,7 +72,7 @@ class RegionProporsal():
         split_tile = KB.tile([1], [batch_size])
         top_data = zip(tf.split(offset_region, split_tile, axis=0)
                        , tf.split(top_scores, split_tile, axis=0))
-        proposal_regions = [self.__nms(region, score) for region, score in top_data]
+        proposal_regions = [self.__nms(rs, ss) for rs, ss in top_data]
         return KB.stack(proposal_regions)
 
 
@@ -80,40 +83,14 @@ class RegionProporsal():
         return KB.stack(KB.flatten(first_dim_ids), KB.flatten(top_ids), axis=1)
 
 
-    def __get_offset_region(self, regions, offsets):
-        reg_h = regions[:, 2] - regions[:, 0]
-        reg_w = regions[:, 3] - regions[:, 1]
-
-        pos_h = KB.exp(offsets[:, 2]) * reg_h
-        pos_w = KB.exp(offsets[:, 3]) * reg_w
-        center_y = offsets[:, 0] * reg_h + regions[:, 0] + 0.5 * reg_h
-        center_x = offsets[:, 1] * reg_w + regions[:, 1] + 0.5 * reg_w
-
-        min_x = center_x - 0.5 * pos_w
-        min_y = center_y - 0.5 * pos_h
-        max_x = center_x + 0.5 * pos_w
-        max_y = center_y + 0.5 * pos_h
-        return KB.transpose(KB.stack((min_y, min_x, max_y, max_x), axis=0))
-
-
     def __nms(self, regions, scores):
-        if self.__image_shape is None:
-            return tf.reshape(regions, [self.__cl_pre, 4])
-        (img_h, img_w, _) = self.__image_shape
-
         regs_2d = tf.reshape(regions, [self.__cl_pre, 4])
         scos_2d = tf.reshape(scores, [self.__cl_pre])
-        norm_regs = self.__normalize_regions(regs_2d, img_h, img_w)
-        ids = tf.image.non_max_suppression(norm_regs, scos_2d, self.__cl_post
-                                           , iou_threshold=self.__th)
-        regs = tf.gather(norm_regs, ids)
-        padding = tf.maximum(self.__cl_post - tf.shape(regs)[0], 0)
-        padding_regs = tf.pad(regs, [(0, padding), (0, 0)])
-        return padding_regs
-
-
-    def __normalize_regions(self, regions, img_h, img_w):
-        return regions / KB.variable([img_h, img_w, img_h, img_w])
+        regs = regs_2d
+        if self.__image_shape is not None:
+            (img_h, img_w, _) = self.__image_shape
+            regs = RegionsUtils(regs_2d).normalize(img_h, img_w)
+        return NMS(self.__cl_post, self.__th)(regs, scos_2d)
 
 
     def __region_proporsal_output_shape(self, inputs_shape):
