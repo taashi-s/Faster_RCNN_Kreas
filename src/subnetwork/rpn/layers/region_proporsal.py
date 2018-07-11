@@ -43,37 +43,42 @@ class RegionProporsal():
     def __region_proporsal(self, inputs):
         scores = inputs[0][:, :, 1]
         offsets = inputs[1] * self.__ref_sd
-        anchor_num = self.__anchors.shape[0]
 
+        anchor_num = self.__anchors.shape[0]
         limit_pre = min(self.__cl_pre, anchor_num)
         top_ids = tf.nn.top_k(scores, limit_pre, sorted=True).indices
-
         (batch_size, _) = KB.int_shape(top_ids)
-        top_posisions = self.__make_top_posisions(top_ids)
-        top_scores = KB.reshape(tf.gather_nd(scores, top_posisions)
-                                , [batch_size, limit_pre, 1])
-        top_offsets = KB.reshape(tf.gather_nd(offsets, top_posisions)
-                                 , [batch_size, limit_pre, 4])
+        top_poss = self.__make_top_posisions(top_ids)
+        top_scores = self.__get_top_scores(scores, top_poss, batch_size, limit_pre)
+        top_regions = self.__get_top_regions(offsets, top_poss, batch_size, limit_pre, anchor_num)
 
+        split_tile = KB.tile([1], [batch_size])
+        top_zip = zip(tf.split(top_regions, split_tile, axis=0)
+                      , tf.split(top_scores, split_tile, axis=0))
+        proposal_regions = [self.__nms(rs, ss) for rs, ss in top_zip]
+        return KB.stack(proposal_regions)
+
+
+    def __get_top_scores(self, scores, top_posisions, batch_size, limit):
+        return KB.reshape(tf.gather_nd(scores, top_posisions), [batch_size, limit, 1])
+
+
+    def __get_top_regions(self, offsets, top_posisions, batch_size, limit, anchor_num):
+        top_offsets = KB.reshape(tf.gather_nd(offsets, top_posisions)
+                                 , [batch_size, limit, 4])
         anchors_tile = KB.reshape(KB.tile(self.__anchors, [batch_size, 1])
                                   , [batch_size, anchor_num, 4])
         regions = KB.reshape(tf.gather_nd(anchors_tile, top_posisions)
-                             , [batch_size, limit_pre, 4])
+                             , [batch_size, limit, 4])
 
-        bundle_up_regs = KB.reshape(regions, [batch_size * limit_pre, 4])
-        bundle_up_offs = KB.reshape(top_offsets, [batch_size * limit_pre, 4])
+        bundle_up_regs = KB.reshape(regions, [batch_size * limit, 4])
+        bundle_up_offs = KB.reshape(top_offsets, [batch_size * limit, 4])
         offset_region_tmp = RegionsUtils(bundle_up_regs).offset(bundle_up_offs)
         if self.__image_shape is not None:
             (img_h, img_w, _) = self.__image_shape
             offset_region_tmp = KB.clip(offset_region_tmp, [0, 0, 0, 0]
                                         , [img_h, img_w, img_h, img_w])
-        offset_region = KB.reshape(offset_region_tmp, [batch_size, limit_pre, 4])
-
-        split_tile = KB.tile([1], [batch_size])
-        top_data = zip(tf.split(offset_region, split_tile, axis=0)
-                       , tf.split(top_scores, split_tile, axis=0))
-        proposal_regions = [self.__nms(rs, ss) for rs, ss in top_data]
-        return KB.stack(proposal_regions)
+        return KB.reshape(offset_region_tmp, [batch_size, limit, 4])
 
 
     def __make_top_posisions(self, top_ids):
