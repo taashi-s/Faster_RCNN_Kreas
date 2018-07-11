@@ -1,6 +1,6 @@
 """
 TODO : Write description
-Region Proporsal Layer Module
+Region proposal Layer Module
 """
 
 import numpy as np
@@ -11,10 +11,10 @@ from keras.layers.core import Lambda
 from utils.regions_utils import RegionsUtils
 from utils.non_maximal_suppression import NMS
 
-class RegionProporsal():
+class Regionproposal():
     """
     TODO : Write description
-    Region Proporsal Layer class
+    Region proposal Layer class
 
     Expecte inputs shape : [ class_logits : [B, anchor_boxes, 2]
                            , region_offsets : [B, anchor_boxes, 4]
@@ -32,15 +32,15 @@ class RegionProporsal():
         self.__ref_sd = np.array([0.1, 0.1, 0.2, 0.2])
         if refinement_std_dev is not None:
             self.__ref_sd = refinement_std_dev
-        self.__layer = Lambda(self.__region_proporsal
-                              , output_shape=self.__region_proporsal_output_shape)
+        self.__layer = Lambda(self.__region_proposal
+                              , output_shape=self.__region_proposal_output_shape)
 
 
     def __call__(self):
         return self.__layer
 
 
-    def __region_proporsal(self, inputs):
+    def __region_proposal(self, inputs):
         scores = inputs[0][:, :, 1]
         offsets = inputs[1] * self.__ref_sd
 
@@ -98,7 +98,7 @@ class RegionProporsal():
         return NMS(self.__cl_post, self.__th)(regs, scos_2d)
 
 
-    def __region_proporsal_output_shape(self, inputs_shape):
+    def __region_proposal_output_shape(self, inputs_shape):
         shape_list = inputs_shape.as_list()
         return (shape_list[0], self.__cl_post, 4)
 
@@ -108,7 +108,7 @@ class RegionProporsal():
         TODO : Write description
         get_output_shape
         """
-        return self.__region_proporsal_output_shape(inputs_shape)
+        return self.__region_proposal_output_shape(inputs_shape)
 
 
     def get_layer(self):

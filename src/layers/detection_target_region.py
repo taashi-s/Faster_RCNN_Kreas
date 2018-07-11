@@ -1,6 +1,6 @@
 """
 TODO : Write description
-Region Proporsal Layer Module
+Region proposal Layer Module
 """
 
 import keras.engine.base_layer as KELayer

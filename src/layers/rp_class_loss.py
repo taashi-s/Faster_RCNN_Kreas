@@ -1,6 +1,6 @@
 """
 TODO : Write description
-Region Proporsal Class Loss Layer Module
+Region proposal Class Loss Layer Module
 """
 
 from keras.layers.core import Lambda
@@ -8,7 +8,7 @@ from keras.layers.core import Lambda
 class RPClassLoss():
     """
     TODO : Write description
-    Region Proporsal Class Loss Layer class
+    Region proposal Class Loss Layer class
     """
 
     def __init__(self):

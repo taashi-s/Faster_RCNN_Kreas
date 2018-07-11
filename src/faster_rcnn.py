@@ -12,7 +12,7 @@ from keras.layers.core import Dense, Flatten, Activation, Reshape
 from keras.layers.normalization import BatchNormalization
 
 from subnetwork.resnet.resnet import ResNet
-from subnetwork.rpn.region_proporsal_net import RegionProporsalNet
+from subnetwork.rpn.region_proposal_net import RegionproposalNet
 from layers.rp_class_loss import RPClassLoss
 from layers.rp_region_loss import RPRegionLoss
 from layers.detection_target_region import DetectionTargetRegion
@@ -35,7 +35,7 @@ class FasterRCNN():
     ResNet class
     """
 
-    def __init__(self, input_shape, class_num, train_taegets=None):
+    def __init__(self, input_shape, class_num, anchors, is_predict=False, train_taegets=None):
         self.__input_shape = input_shape
 
         if train_taegets is None:
@@ -53,8 +53,10 @@ class FasterRCNN():
         resnet = ResNet(inputs_images.get_shape(), input_layers=inputs_images
                         , trainable=train_backbone).get_residual_network()
 
-        rpn = RegionProporsalNet(resnet.get_shape(), input_layers=resnet
-                                 , trainable=train_rpn).get_network()
+        rpn = RegionproposalNet(resnet.get_shape(), anchors
+                                 , input_layers=resnet, image_shape=self.__input_shape()
+                                 , is_predict=is_predict, trainable=train_rpn).get_network()
+
 
         if train_rpn:
             inputs_rp_cls = Input(shape=[None, 1], dtype='int32')
