@@ -54,26 +54,26 @@ class FasterRCNN():
                         , trainable=train_backbone).get_residual_network()
 
         rpn = RegionproposalNet(resnet.get_shape(), anchors
-                                 , input_layers=resnet, image_shape=self.__input_shape()
-                                 , is_predict=is_predict, trainable=train_rpn).get_network()
-
+                                , input_layers=resnet, image_shape=self.__input_shape()
+                                , is_predict=is_predict, trainable=train_rpn).get_network()
+        cls_probs, regions, prop_regs = rpn
 
         if train_rpn:
             inputs_rp_cls = Input(shape=[None, 1], dtype='int32')
             inputs_rp_reg = Input(shape=[None, 4], dtype='float32')
             inputs += [inputs_rp_cls, inputs_rp_reg]
 
-            rp_cls_losses = RPClassLoss()(rpn)
-            rp_reg_losses = RPRegionLoss()(rpn)
+            rp_cls_losses = RPClassLoss()([inputs_rp_cls, cls_probs])
+            rp_reg_losses = RPRegionLoss()([inputs_rp_reg, cls_probs, regions])
             outputs += [rp_cls_losses, rp_reg_losses]
 
         if train_head:
-            dtr = DetectionTargetRegion()(rpn)
-            head = self.__head_net(dtr, class_num)
-
             inputs_cls = Input(shape=[None, 1], dtype='int32')
             inputs_reg = Input(shape=[None, 4], dtype='float32')
             inputs += [inputs_cls, inputs_reg]
+
+            dtr = DetectionTargetRegion()([inputs_cls, inputs_reg, prop_regs])
+            head = self.__head_net(dtr, class_num)
 
             cls_losses = ClassLoss()(head)
             reg_losses = RegionLoss()(head)
