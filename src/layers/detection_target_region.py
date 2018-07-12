@@ -26,7 +26,7 @@ class DetectionTargetRegion(KELayer.Layer):
         self.__image_shape = image_shape
 
 
-    def call(self, inputs):
+    def call(self, inputs, **kwargs):
         return self.__detection_target_region(*inputs)
 
     def __detection_target_region(self, cls_labels, reg_labels, regions):
@@ -38,9 +38,9 @@ class DetectionTargetRegion(KELayer.Layer):
             (img_h, img_w, _) = self.__image_shape
             norm_reg_labels = RegionsUtils(reg_labels).normalize(img_h, img_w)
 
-        target_regs = []
-        target_ofss = []
         target_clss = []
+        target_ofss = []
+        target_regs = []
 
         zip_data = self.__zip_by_batch(cls_labels, norm_reg_labels, regions, batch_size)
         for data in zip_data:
@@ -48,10 +48,10 @@ class DetectionTargetRegion(KELayer.Layer):
             target_data = self.__get_target_data(*data_s)
 
             target_reg, target_ofs, target_cls = target_data
-            target_regs.append(target_reg)
+            target_clss.append(tf.expand_dims(target_cls, 2))
             target_ofss.append(target_ofs)
-            target_clss.append(target_cls)
-        return [KB.stack(target_regs) , KB.stack(target_ofss) , KB.stack(target_clss)]
+            target_regs.append(target_reg)
+        return [KB.stack(target_clss), KB.stack(target_ofss), KB.stack(target_regs)]
 
     def __zip_by_batch(self, cls_labels, reg_labels, regions, batch_size):
         split_cls_labels = tf.split(cls_labels, batch_size)
@@ -131,4 +131,7 @@ class DetectionTargetRegion(KELayer.Layer):
 
 
     def compute_output_shape(self, input_shape):
-        return input_shape
+        return [(None, self.__count_per_batch, 1)
+                , (None, self.__count_per_batch, 4)
+                , (None, self.__count_per_batch, 4)
+               ]
