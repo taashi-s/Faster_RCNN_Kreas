@@ -17,7 +17,7 @@ class RegionproposalNet():
     """
 
     def __init__(self, input_shape, anchors, input_layers=None, box_by_anchor=9
-                 , image_shape=None, is_predict=False, trainable=True):
+                 , image_shape=None, batch_size=5, is_predict=False, trainable=True):
         self.__trainable = trainable
         self.__input_shape = input_shape
 
@@ -41,7 +41,7 @@ class RegionproposalNet():
         # [B, h, w, box_by_anchor * 4] -> [B, anchor boxes, 4]
         regions = Reshape([-1, 4])(reg_layer)
 
-        prop_regs = Regionproposal(anchors, image_shape=image_shape
+        prop_regs = Regionproposal(anchors, image_shape=image_shape, batch_size=batch_size
                                    , count_limit_post=1000 if is_predict else 2000
                                   )([cls_probs, regions])
 

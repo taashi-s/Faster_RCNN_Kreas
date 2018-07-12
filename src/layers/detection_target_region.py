@@ -17,21 +17,20 @@ class DetectionTargetRegion(KELayer.Layer):
     """
 
     def __init__(self, positive_threshold=0.5, positive_ratio=0.33, image_shape=None
-                 , exclusion_threshold=0.1, count_per_batch=64, **kwargs):
+                 , batch_size=5, exclusion_threshold=0.1, count_per_batch=64, **kwargs):
         super(DetectionTargetRegion, self).__init__(**kwargs)
         self.__th = positive_threshold
         self.__excl_th = exclusion_threshold
         self.__count_per_batch = count_per_batch
         self.__ratio = positive_ratio
         self.__image_shape = image_shape
-
+        self.__batch_size = batch_size
 
     def call(self, inputs, **kwargs):
         return self.__detection_target_region(*inputs)
 
     def __detection_target_region(self, cls_labels, reg_labels, regions):
         input_shape_list = regions.get_shape().as_list()
-        batch_size = input_shape_list[0]
 
         norm_reg_labels = reg_labels
         if self.__image_shape is not None:
@@ -42,7 +41,7 @@ class DetectionTargetRegion(KELayer.Layer):
         target_ofss = []
         target_regs = []
 
-        zip_data = self.__zip_by_batch(cls_labels, norm_reg_labels, regions, batch_size)
+        zip_data = self.__zip_by_batch(cls_labels, norm_reg_labels, regions, self.__batch_size)
         for data in zip_data:
             data_s = self.__shaping_inputs(*data)
             target_data = self.__get_target_data(*data_s)

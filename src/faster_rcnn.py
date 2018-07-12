@@ -35,7 +35,8 @@ class FasterRCNN():
     ResNet class
     """
 
-    def __init__(self, input_shape, class_num, anchors, is_predict=False, train_taegets=None):
+    def __init__(self, input_shape, class_num, anchors
+                 , batch_size=5, is_predict=False, train_taegets=None):
         self.__input_shape = input_shape
 
         if train_taegets is None:
@@ -53,8 +54,8 @@ class FasterRCNN():
         resnet = ResNet(inputs_images.get_shape(), input_layers=inputs_images
                         , trainable=train_backbone).get_residual_network()
 
-        rpn = RegionproposalNet(resnet.get_shape(), anchors
-                                , input_layers=resnet, image_shape=self.__input_shape
+        rpn = RegionproposalNet(resnet.get_shape(), anchors, input_layers=resnet
+                                , image_shape=self.__input_shape, batch_size=batch_size
                                 , is_predict=is_predict, trainable=train_rpn).get_network()
         rpn_cls_probs, rpn_regions, rpn_prop_regs = rpn
 
@@ -73,12 +74,12 @@ class FasterRCNN():
             inputs += [inputs_cls, inputs_reg]
 
             dtr = DetectionTargetRegion(positive_threshold=0.5, positive_ratio=0.33
-                                        , image_shape=self.__input_shape
+                                        , image_shape=self.__input_shape, batch_size=batch_size
                                         , exclusion_threshold=0.1, count_per_batch=64
                                        )([inputs_cls, inputs_reg, rpn_prop_regs])
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
 
-            clsses, offsets = self.__head_net(resnet, dtr_regions, class_num)
+            clsses, offsets = self.__head_net(resnet, dtr_regions, class_num, batch_size=batch_size)
 
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
             reg_losses = RegionLoss()([dtr_cls_labels, dtr_offsets_labels, offsets])
@@ -91,8 +92,9 @@ class FasterRCNN():
             self.__model.add_loss(tf.reduce_mean(output, keep_dims=True))
 
 
-    def __head_net(self, fmaps, regions, class_num):
-        roi_pool = RoIPooling(image_shape=self.__input_shape)([fmaps, regions])
+    def __head_net(self, fmaps, regions, class_num, batch_size=5):
+        roi_pool = RoIPooling(image_shape=self.__input_shape
+                              , batch_size=batch_size)([fmaps, regions])
         flt = TimeDistributed(Flatten())(roi_pool)
 
         fc1 = TimeDistributed(Dense(2048))(flt)

@@ -23,13 +23,15 @@ class Regionproposal():
     """
 
     def __init__(self, anchors, count_limit_pre=6000, count_limit_post=2000
-                 , image_shape=None, threshould=0.7, refinement_std_dev=None):
+                 , image_shape=None, batch_size=5
+                 , threshould=0.7, refinement_std_dev=None):
         self.__anchors = anchors
         self.__cl_pre = count_limit_pre
         self.__cl_post = count_limit_post
         self.__image_shape = image_shape
         self.__th = threshould
         self.__ref_sd = np.array([0.1, 0.1, 0.2, 0.2])
+        self.__batch_size = batch_size
         if refinement_std_dev is not None:
             self.__ref_sd = refinement_std_dev
         self.__layer = Lambda(lambda inputs: self.__region_proposal(*inputs)
@@ -47,8 +49,8 @@ class Regionproposal():
         anchor_num = self.__anchors.shape[0]
         limit_pre = min(self.__cl_pre, anchor_num)
         top_ids = tf.nn.top_k(scores, limit_pre, sorted=True).indices
-        (batch_size, _) = KB.int_shape(top_ids)
-        top_poss = self.__make_top_posisions(top_ids)
+        batch_size = self.__batch_size
+        top_poss = self.__make_top_posisions(top_ids, batch_size)
         top_scores = self.__get_top_scores(scores, top_poss, batch_size, limit_pre)
         top_regions = self.__get_top_regions(offsets, top_poss, batch_size, limit_pre, anchor_num)
 
@@ -81,9 +83,9 @@ class Regionproposal():
         return KB.reshape(offset_region_tmp, [batch_size, limit, 4])
 
 
-    def __make_top_posisions(self, top_ids):
-        (batch, ids) = KB.int_shape(top_ids)
-        id_base = KB.reshape(KB.arange(batch), [-1, 1])
+    def __make_top_posisions(self, top_ids, batch_size):
+        (_, ids) = KB.int_shape(top_ids)
+        id_base = KB.reshape(KB.arange(batch_size)), [-1, 1])
         first_dim_ids = KB.repeat(id_base, ids)
         return KB.stack(KB.flatten(first_dim_ids), KB.flatten(top_ids), axis=1)
 

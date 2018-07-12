@@ -33,11 +33,12 @@ class RoIPooling():
 
     """
 
-    def __init__(self, pooling=(7, 7), image_shape=None):
+    def __init__(self, batch_size=5, pooling=(7, 7), image_shape=None):
         (pooling_h, pooling_w) = KCUtils.normalize_tuple(pooling, 2, 'pooling')
         self.__pooling_h = pooling_h
         self.__pooling_w = pooling_w
         self.__image_shape = image_shape
+        self.__batch_size = batch_size
         self.__layer = Lambda(lambda inputs: self.__roi_pooling(*inputs)
                               , output_shape=self.__roi_pooling_output_shape)
 
@@ -47,15 +48,15 @@ class RoIPooling():
 
 
     def __roi_pooling(self, fmaps, regions):
-        batch_size, reg_num, _ = regions.get_shape().as_list()
+        _, reg_num, _ = regions.get_shape().as_list()
 
         flat_regs = KB.concatenate(tf.unstack(regions))
-        img_ids = KB.arange(batch_size)
+        img_ids = KB.arange(self.__batch_size)
         target_img_ids = KB.flatten(KB.repeat(KB.reshape(img_ids, [-1, 1]), reg_num))
         pooling_size = [self.__pooling_h, self.__pooling_w]
 
         pooling_fmaps = tf.image.crop_and_resize(fmaps, flat_regs, target_img_ids, pooling_size)
-        output_shape = [batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1]
+        output_shape = [self.__batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1]
         return KB.reshape(pooling_fmaps, output_shape)
 
 
