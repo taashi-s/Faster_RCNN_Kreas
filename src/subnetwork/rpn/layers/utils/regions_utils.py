@@ -28,7 +28,7 @@ class RegionsUtils():
         TODO : Write description
         offset
         """
-        regions = self.__regions
+        regions = KB.cast(self.__regions, 'float32')
         reg_h = regions[:, 2] - regions[:, 0]
         reg_w = regions[:, 3] - regions[:, 1]
 

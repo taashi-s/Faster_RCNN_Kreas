@@ -16,8 +16,9 @@ class RegionproposalNet():
     RegionproposalNet class
     """
 
-    def __init__(self, input_shape, anchors, input_layers=None, box_by_anchor=9
-                 , image_shape=None, batch_size=5, is_predict=False, trainable=True):
+    def __init__(self, input_shape, anchors, input_layers=None, prev_layers=None
+                 , box_by_anchor=9, image_shape=None, batch_size=5
+                 , is_predict=False, trainable=True):
         self.__trainable = trainable
         self.__input_shape = input_shape
 
@@ -25,8 +26,12 @@ class RegionproposalNet():
         if input_layers is not None:
             inputs = input_layers
 
+        prevs = inputs
+        if prev_layers is not None:
+            prevs = prev_layers
+
         intermediate = Conv2D(256, 3, strides=3, activation="relu", padding='same'
-                              , trainable=self.__trainable)(inputs)
+                              , trainable=self.__trainable)(prevs)
 
         cls_layer = Conv2D(2 * box_by_anchor, 1, activation="relu"
                            , trainable=self.__trainable)(intermediate)
@@ -45,9 +50,9 @@ class RegionproposalNet():
                                    , count_limit_post=1000 if is_predict else 2000
                                   )([cls_probs, regions])
 
-        outputs = [cls_probs, regions, prop_regs]
+        outputs = ([cls_probs, regions, prop_regs])
         self.__network = outputs
-        self.__model = Model(inputs=[inputs], outputs=[outputs])
+        self.__model = Model(inputs=[inputs], outputs=outputs)
 
     def get_input_size(self):
         """

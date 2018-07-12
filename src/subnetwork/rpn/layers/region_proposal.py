@@ -85,9 +85,9 @@ class Regionproposal():
 
     def __make_top_posisions(self, top_ids, batch_size):
         (_, ids) = KB.int_shape(top_ids)
-        id_base = KB.reshape(KB.arange(batch_size)), [-1, 1])
+        id_base = KB.reshape(KB.arange(batch_size), [-1, 1])
         first_dim_ids = KB.repeat(id_base, ids)
-        return KB.stack(KB.flatten(first_dim_ids), KB.flatten(top_ids), axis=1)
+        return KB.stack((KB.flatten(first_dim_ids), KB.flatten(top_ids)), axis=1)
 
 
     def __nms(self, regions, scores):

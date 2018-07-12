@@ -52,11 +52,14 @@ class FasterRCNN():
         inputs += [inputs_images]
 
         resnet = ResNet(inputs_images.get_shape(), input_layers=inputs_images
-                        , trainable=train_backbone).get_residual_network()
+                        , trainable=train_backbone
+                       ).get_residual_network()
 
-        rpn = RegionproposalNet(resnet.get_shape(), anchors, input_layers=resnet
-                                , image_shape=self.__input_shape, batch_size=batch_size
-                                , is_predict=is_predict, trainable=train_rpn).get_network()
+        rpn = RegionproposalNet(resnet.get_shape(), anchors, input_layers=inputs_images
+                                , image_shape=self.__input_shape, prev_layers=resnet
+                                , batch_size=batch_size, is_predict=is_predict
+                                , trainable=train_rpn
+                               ).get_network()
         rpn_cls_probs, rpn_regions, rpn_prop_regs = rpn
 
         if train_rpn:
@@ -86,7 +89,7 @@ class FasterRCNN():
             outputs += [cls_losses, reg_losses]
 
         self.__network = outputs
-        self.__model = Model(inputs=[inputs], outputs=[outputs])
+        self.__model = Model(inputs=inputs, outputs=outputs)
 
         for output in outputs:
             self.__model.add_loss(tf.reduce_mean(output, keep_dims=True))
