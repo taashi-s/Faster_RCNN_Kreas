@@ -7,7 +7,7 @@ import tensorflow as tf
 import keras.engine.base_layer as KELayer
 import keras.backend as KB
 
-from utils import RegionsUtils
+from utils.regions_utils import RegionsUtils
 
 
 class DetectionTargetRegion(KELayer.Layer):

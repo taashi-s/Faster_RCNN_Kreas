@@ -4,6 +4,8 @@ Class Loss Layer Module
 """
 
 from keras.layers.core import Lambda
+import keras.backend as KB
+import utils.loss_utils as lu
 
 class ClassLoss():
     """
@@ -12,7 +14,7 @@ class ClassLoss():
     """
 
     def __init__(self):
-        self.layer = Lambda(self.__class_loss
+        self.layer = Lambda(lambda inputs: self.__class_loss(*inputs)
                             , output_shape=self.__class_loss_output_shape)
 
 
@@ -20,9 +22,9 @@ class ClassLoss():
         return self.layer
 
 
-    def __class_loss(self, inputs):
-        return inputs
+    def __class_loss(self, label, pred):
+        return lu.class_labels_mean_loss(KB.squeeze(label, 2), pred)
 
 
-    def __class_loss_output_shape(self, inputs_shape):
-        return inputs_shape
+    def __class_loss_output_shape(self, _):
+        return [1]

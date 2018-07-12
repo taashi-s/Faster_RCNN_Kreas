@@ -4,8 +4,9 @@ Region proposal Class Loss Layer Module
 """
 
 import tensorflow as tf
-import keras.backend as KB
 from keras.layers.core import Lambda
+
+import utils.loss_utils as lu
 
 class RPClassLoss():
     """
@@ -29,12 +30,7 @@ class RPClassLoss():
         target_labels = tf.gather_nd(base_labels, ids)
         target_preds = tf.gather_nd(preds, ids)
 
-        return self.__cls_labels_mean_loss(target_labels, target_preds)
-
-
-    def __cls_labels_mean_loss(self, labels, preds):
-        loss = KB.sparse_categorical_crossentropy(labels, preds)
-        return KB.switch(tf.size(loss) > 0, KB.mean(loss), KB.constant(0.0))
+        return lu.class_labels_mean_loss(target_labels, target_preds)
 
 
     def __class_loss_output_shape(self, _):

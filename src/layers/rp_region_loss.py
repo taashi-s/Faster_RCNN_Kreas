@@ -4,8 +4,9 @@ Region proposal Region Loss Layer Module
 """
 
 import tensorflow as tf
-import keras.backend as KB
 from keras.layers.core import Lambda
+
+import utils.loss_utils as lu
 
 class RPRegionLoss():
     """
@@ -29,18 +30,7 @@ class RPRegionLoss():
         target_reg_labels = tf.gather_nd(reg_labels, ids)
         target_preds = tf.gather_nd(preds, ids)
 
-        return self.__reg_labels_mean_loss(target_reg_labels, target_preds)
-
-
-    def __reg_labels_mean_loss(self, labels, preds):
-        loss = self.__smooth(labels, preds)
-        return KB.switch(tf.size(loss) > 0, KB.mean(loss), KB.constant(0.0))
-
-
-    def __smooth(self, labels, preds):
-        diff = KB.abs(labels - preds)
-        less = KB.cast(KB.less(diff, 1.0), "float32")
-        return (less * 0.5 * diff**2) + (1 - less) * (diff - 0.5)
+        return lu.offset_labels_mean_loss(target_reg_labels, target_preds)
 
 
     def __region_loss_output_shape(self, _):
