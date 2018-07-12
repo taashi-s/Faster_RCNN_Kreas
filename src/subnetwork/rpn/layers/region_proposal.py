@@ -36,8 +36,8 @@ class Regionproposal():
                               , output_shape=self.__region_proposal_output_shape)
 
 
-    def __call__(self):
-        return self.__layer
+    def __call__(self, inputs):
+        return self.__layer(inputs)
 
 
     def __region_proposal(self, inputs_scores, inputs_offsets):

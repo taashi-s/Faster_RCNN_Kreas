@@ -15,12 +15,12 @@ class RPRegionLoss():
     """
 
     def __init__(self):
-        self.layer = Lambda(lambda inputs: self.__region_loss(*inputs)
-                            , output_shape=self.__region_loss_output_shape)
+        self.__layer = Lambda(lambda inputs: self.__region_loss(*inputs)
+                              , output_shape=self.__region_loss_output_shape)
 
 
-    def __call__(self):
-        return self.layer
+    def __call__(self, inputs):
+        return self.__layer(inputs)
 
 
     def __region_loss(self, cls_labels, reg_labels, preds):

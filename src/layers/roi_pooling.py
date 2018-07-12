@@ -38,12 +38,12 @@ class RoIPooling():
         self.__pooling_h = pooling_h
         self.__pooling_w = pooling_w
         self.__image_shape = image_shape
-        self.layer = Lambda(lambda inputs: self.__roi_pooling(*inputs)
-                            , output_shape=self.__roi_pooling_output_shape)
+        self.__layer = Lambda(lambda inputs: self.__roi_pooling(*inputs)
+                              , output_shape=self.__roi_pooling_output_shape)
 
 
-    def __call__(self):
-        return self.layer
+    def __call__(self, inputs):
+        return self.__layer(inputs)
 
 
     def __roi_pooling(self, fmaps, regions):

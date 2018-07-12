@@ -14,12 +14,12 @@ class ClassLoss():
     """
 
     def __init__(self):
-        self.layer = Lambda(lambda inputs: self.__class_loss(*inputs)
-                            , output_shape=self.__class_loss_output_shape)
+        self.__layer = Lambda(lambda inputs: self.__class_loss(*inputs)
+                              , output_shape=self.__class_loss_output_shape)
 
 
-    def __call__(self):
-        return self.layer
+    def __call__(self, inputs):
+        return self.__layer(inputs)
 
 
     def __class_loss(self, label, pred):
