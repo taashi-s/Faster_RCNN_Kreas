@@ -8,8 +8,8 @@ import tensorflow as tf
 import keras.backend as KB
 from keras.layers.core import Lambda
 
-from utils.regions_utils import RegionsUtils
-from utils.non_maximal_suppression import NMS
+from .utils.regions_utils import RegionsUtils
+from .utils.non_maximal_suppression import NMS
 
 class Regionproposal():
     """

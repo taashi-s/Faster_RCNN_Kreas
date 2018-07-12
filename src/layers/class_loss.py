@@ -5,7 +5,7 @@ Class Loss Layer Module
 
 from keras.layers.core import Lambda
 import keras.backend as KB
-import utils.loss_utils as lu
+from .utils import loss_utils as lu
 
 class ClassLoss():
     """

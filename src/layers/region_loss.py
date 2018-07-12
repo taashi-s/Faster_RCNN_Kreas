@@ -7,7 +7,7 @@ import tensorflow as tf
 import keras.backend as KB
 from keras.layers.core import Lambda
 
-import utils.loss_utils as lu
+from .utils import loss_utils as lu
 
 class RegionLoss():
     """

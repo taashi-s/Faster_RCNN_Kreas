@@ -6,7 +6,7 @@ Region proposal Class Loss Layer Module
 import tensorflow as tf
 from keras.layers.core import Lambda
 
-import utils.loss_utils as lu
+from .utils import loss_utils as lu
 
 class RPClassLoss():
     """

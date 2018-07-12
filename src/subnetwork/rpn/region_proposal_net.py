@@ -8,7 +8,7 @@ from keras.engine.topology import Input
 from keras.layers.core import Reshape, Activation
 from keras.layers.convolutional import Conv2D
 
-from layers.region_proposal import Regionproposal
+from .layers.region_proposal import Regionproposal
 
 class RegionproposalNet():
     """
