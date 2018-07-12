@@ -3,26 +3,63 @@ TODO : Write description
 RoI Pooling Layer Module
 """
 
-import keras.engine.base_layer as KELayer
+import tensorflow as tf
+import keras.backend as KB
+import keras.utils.conv_utils as KCUtils
+from keras.layers.core import Lambda
 
 
-class RoIPooling(KELayer.Layer):
+class RoIPooling():
     """
     TODO : Write description
     RoI Pooling Layer class
+
+    TODO : this processing is like the RoI Align Layer.
+
+    this processing :
+        fmaps crop, and use crop_and_resize(binary interpolation)
+
+    actual RoI Pooling processing :
+        Rounding the coordinates of the regions.
+        After that, separate the region into pooling size
+        , then max(or avarage) pooling in that each separated region.
+
+    actual RoI Align processing :
+        Separate the region into pooling size.
+        (without, rounding the coordinates of the regions),
+        Calculate four corners of that each separate region
+        from each four neighborhoods by bilinear interpolation.
+        Finally, max(or avarage) pooling that four corners.
+
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, pooling=(7, 7), image_shape=None):
+        (pooling_h, pooling_w) = KCUtils.normalize_tuple(pooling, 2, 'pooling')
+        self.__pooling_h = pooling_h
+        self.__pooling_w = pooling_w
+        self.__image_shape = image_shape
+        self.layer = Lambda(lambda inputs: self.__roi_pooling(*inputs)
+                            , output_shape=self.__roi_pooling_output_shape)
 
 
-    def build(self, input_shape):
-        super().build(input_shape)
+    def __call__(self):
+        return self.layer
 
 
-    def call(self, inputs, **kwargs):
-        return inputs
+    def __roi_pooling(self, fmaps, regions):
+        batch_size, reg_num, _ = regions.get_shape().as_list()
+
+        flat_regs = KB.concatenate(tf.unstack(regions))
+        img_ids = KB.arange(batch_size)
+        target_img_ids = KB.flatten(KB.repeat(KB.reshape(img_ids, [-1, 1]), reg_num))
+        pooling_size = [self.__pooling_h, self.__pooling_w]
+
+        pooling_fmaps = tf.image.crop_and_resize(fmaps, flat_regs, target_img_ids, pooling_size)
+        output_shape = [batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1]
+        return KB.reshape(pooling_fmaps, output_shape)
 
 
-    def compute_output_shape(self, input_shape):
-        return input_shape
+    def __roi_pooling_output_shape(self, inputs_shape):
+        fmaps_shapes = inputs_shape[0].as_list()
+        regions_shapes = inputs_shape[1].as_list()
+        return [None, regions_shapes[1], self.__pooling_h, self.__pooling_w, fmaps_shapes[3]]

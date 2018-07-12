@@ -54,17 +54,17 @@ class FasterRCNN():
                         , trainable=train_backbone).get_residual_network()
 
         rpn = RegionproposalNet(resnet.get_shape(), anchors
-                                , input_layers=resnet, image_shape=self.__input_shape()
+                                , input_layers=resnet, image_shape=self.__input_shape
                                 , is_predict=is_predict, trainable=train_rpn).get_network()
-        cls_probs, regions, prop_regs = rpn
+        rpn_cls_probs, rpn_regions, rpn_prop_regs = rpn
 
         if train_rpn:
             inputs_rp_cls = Input(shape=[None, 1], dtype='int32')
             inputs_rp_reg = Input(shape=[None, 4], dtype='float32')
             inputs += [inputs_rp_cls, inputs_rp_reg]
 
-            rp_cls_losses = RPClassLoss()([inputs_rp_cls, cls_probs])
-            rp_reg_losses = RPRegionLoss()([inputs_rp_reg, cls_probs, regions])
+            rp_cls_losses = RPClassLoss()([inputs_rp_cls, rpn_cls_probs])
+            rp_reg_losses = RPRegionLoss()([inputs_rp_reg, rpn_cls_probs, rpn_regions])
             outputs += [rp_cls_losses, rp_reg_losses]
 
         if train_head:
@@ -72,11 +72,16 @@ class FasterRCNN():
             inputs_reg = Input(shape=[None, 4], dtype='float32')
             inputs += [inputs_cls, inputs_reg]
 
-            dtr = DetectionTargetRegion()([inputs_cls, inputs_reg, prop_regs])
-            head = self.__head_net(dtr, class_num)
+            dtr = DetectionTargetRegion(positive_threshold=0.5, positive_ratio=0.33
+                                        , image_shape=self.__input_shape
+                                        , exclusion_threshold=0.1, count_per_batch=64
+                                       )([inputs_cls, inputs_reg, rpn_prop_regs])
+            dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
 
-            cls_losses = ClassLoss()(head)
-            reg_losses = RegionLoss()(head)
+            clsses, offsets = self.__head_net(resnet, dtr_regions, class_num)
+
+            cls_losses = ClassLoss()([dtr_cls_labels, clsses])
+            reg_losses = RegionLoss()([dtr_cls_labels, dtr_offsets_labels, offsets])
             outputs += [cls_losses, reg_losses]
 
         self.__network = outputs
@@ -86,8 +91,8 @@ class FasterRCNN():
             self.__model.add_loss(tf.reduce_mean(output, keep_dims=True))
 
 
-    def __head_net(self, inputs, class_num):
-        roi_pool = RoIPooling()(inputs)
+    def __head_net(self, fmaps, regions, class_num):
+        roi_pool = RoIPooling(image_shape=self.__input_shape)([fmaps, regions])
         flt = TimeDistributed(Flatten())(roi_pool)
 
         fc1 = TimeDistributed(Dense(2048))(flt)
@@ -99,12 +104,12 @@ class FasterRCNN():
         outputs = act2
 
         cls_logits = TimeDistributed(Dense(class_num))(outputs)
-        cls_probs = Activation('softmax')(cls_logits)
+        clsses = Activation('softmax')(cls_logits)
 
-        reg_tmp = TimeDistributed(Dense(class_num * 4))(outputs)
-        regions = Reshape([-1, class_num, 4])(reg_tmp)
+        ofs_tmp = TimeDistributed(Dense(class_num * 4))(outputs)
+        offsets = Reshape([-1, class_num, 4])(ofs_tmp)
 
-        return cls_logits, cls_probs, regions
+        return clsses, offsets
 
 
     def get_input_size(self):
