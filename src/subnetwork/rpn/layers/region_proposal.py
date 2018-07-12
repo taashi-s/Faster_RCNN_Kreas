@@ -98,22 +98,5 @@ class Regionproposal():
         return NMS(self.__cl_post, self.__th)(regs, scos_2d)
 
 
-    def __region_proposal_output_shape(self, inputs_shape):
-        shape_list = inputs_shape.as_list()
-        return (shape_list[0], self.__cl_post, 4)
-
-
-    def get_output_shape(self, inputs_shape):
-        """
-        TODO : Write description
-        get_output_shape
-        """
-        return self.__region_proposal_output_shape(inputs_shape)
-
-
-    def get_layer(self):
-        """
-        TODO : Write description
-        get_layer
-        """
-        return self.__layer
+    def __region_proposal_output_shape(self, _):
+        return (None, self.__cl_post, 4)
