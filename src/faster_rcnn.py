@@ -53,17 +53,20 @@ class FasterRCNN():
         inputs_images = Input(shape=self.__input_shape)
         inputs += [inputs_images]
 
-        resnet = ResNet(inputs_images.get_shape(), input_layers=inputs_images
-                        , trainable=train_backbone
-                       ).get_residual_network()
+        backbone = ResNet(inputs_images.get_shape(), input_layers=inputs_images
+                          , trainable=train_backbone
+                         ).get_residual_network()
+        self.__backbone_network = (inputs, backbone)
 
-        rpn = RegionproposalNet(resnet.get_shape(), anchors, input_layers=inputs_images
-                                , image_shape=self.__input_shape, prev_layers=resnet
+        rpn = RegionproposalNet(backbone.get_shape(), anchors, input_layers=inputs_images
+                                , image_shape=self.__input_shape, prev_layers=backbone
                                 , batch_size=batch_size, is_predict=is_predict
                                 , trainable=train_rpn
                                ).get_network()
         rpn_cls_probs, rpn_regions, rpn_prop_regs = rpn
+        self.__rpn_network = (inputs, rpn)
 
+        self.__rpn_loss_network = None
         if train_rpn and not is_predict:
             inputs_rp_cls = Input(shape=[None, 1], dtype='int32')
             inputs_rp_reg = Input(shape=[None, 4], dtype='float32')
@@ -72,7 +75,11 @@ class FasterRCNN():
             rp_cls_losses = RPClassLoss()([inputs_rp_cls, rpn_cls_probs])
             rp_reg_losses = RPRegionLoss()([inputs_rp_cls, inputs_rp_reg, rpn_regions])
             outputs += [rp_cls_losses, rp_reg_losses]
+            self.__rpn_loss_network = (inputs, outputs)
 
+        self.__prev_head_network = None
+        self.__head_network = None
+        self.__head_loss_network = None
         if train_head and not is_predict:
             inputs_cls = Input(shape=[None, 1], dtype='int32')
             inputs_reg = Input(shape=[None, 4], dtype='float32')
@@ -83,18 +90,23 @@ class FasterRCNN():
                                         , exclusion_threshold=0.1, count_per_batch=64
                                        )([inputs_cls, inputs_reg, rpn_prop_regs])
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
-            clsses, offsets = self.__head_net(resnet, dtr_regions, class_num, batch_size=batch_size)
+            self.__prev_head_network = (inputs, dtr)
+            clsses, offsets = self.__head_net(backbone, dtr_regions, class_num
+                                              , batch_size=batch_size)
+            self.__head_network = (inputs, [clsses, offsets])
 
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
             reg_losses = RegionLoss()([dtr_cls_labels, dtr_offsets_labels, offsets])
             outputs += [cls_losses, reg_losses]
+            self.__head_loss_network = (inputs, outputs)
 
         if is_predict:
-            clsses, offsets = self.__head_net(resnet, rpn_prop_regs, class_num
+            clsses, offsets = self.__head_net(backbone, rpn_prop_regs, class_num
                                               , batch_size=batch_size)
+            self.__head_network = (inputs, [clsses, offsets])
             outputs = [rpn_prop_regs, clsses, offsets]
 
-        self.__network = outputs
+        self.__network = (inputs, outputs)
         self.__model = Model(inputs=inputs, outputs=outputs)
 
         for output in outputs:
@@ -135,6 +147,55 @@ class FasterRCNN():
         """
         return self.__input_shape
 
+
+    def get_backbone_network(self):
+        """
+        TODO : Write description
+        get_backbone_network
+        """
+        return self.__backbone_network
+
+
+    def get_rpn_network(self):
+        """
+        TODO : Write description
+        get_rpn_network
+        """
+        return self.__rpn_network
+
+
+    def get_rpn_loss_network(self):
+        """
+        TODO : Write description
+        get_rpn_loss_network
+        """
+        return self.__rpn_loss_network
+
+
+    def get_prev_head_network(self):
+        """
+        TODO : Write description
+        get_prev_head_network
+        """
+        return self.__prev_head_network
+
+
+    def get_head_network(self):
+        """
+        TODO : Write description
+        get_head_network
+        """
+        return self.__head_network
+
+
+    def get_head_loss_network(self):
+        """
+        TODO : Write description
+        get_head_loss_network
+        """
+        return self.__head_loss_network
+
+
     def get_network(self):
         """
         TODO : Write description
@@ -142,12 +203,14 @@ class FasterRCNN():
         """
         return self.__network
 
+
     def get_model(self):
         """
         TODO : Write description
         get_model
         """
         return self.__model
+
 
     def default_compile(self):
         """
@@ -157,6 +220,7 @@ class FasterRCNN():
         self.__model.compile(optimizer=SGD(momentum=0.9, decay=0.0001)
                              , loss=[None] * len(self.__model.outputs), metrics=[])
 
+
     def get_model_with_default_compile(self):
         """
         TODO : Write description
@@ -164,6 +228,7 @@ class FasterRCNN():
         """
         self.default_compile()
         return self.__model
+
 
     def draw_model_summary(self, file_name='model.png'):
         plot_model(self.__model, to_file=file_name)
