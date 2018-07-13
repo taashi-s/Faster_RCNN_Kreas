@@ -26,6 +26,7 @@ def train():
 
     network = FasterRCNN(INPUT_SHAPE, 2, anchors, train_taegets=train_taegets)
     model = network.get_model_with_default_compile()
+    network.draw_model_summary()
 #    his = model.fit(train_inputs, train_teachers
 #                    , batch_size=BATCH_SIZE
 #                    , epochs=EPOCHS

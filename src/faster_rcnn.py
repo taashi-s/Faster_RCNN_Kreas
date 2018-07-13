@@ -11,6 +11,7 @@ from keras.layers.wrappers import TimeDistributed
 from keras.layers.core import Dense, Flatten, Activation, Reshape
 from keras.layers.normalization import BatchNormalization
 from keras.optimizers import SGD
+from keras.utils import plot_model
 
 from subnetwork.resnet.resnet import ResNet
 from subnetwork.rpn.region_proposal_net import RegionproposalNet
@@ -153,3 +154,6 @@ class FasterRCNN():
         """
         self.default_compile()
         return self.__model
+
+    def draw_model_summary(self, file_name='model.png'):
+        plot_model(self.__model, to_file=file_name)
