@@ -48,19 +48,18 @@ class RoIPooling():
 
 
     def __roi_pooling(self, fmaps, regions):
-        _, reg_num, _ = regions.get_shape().as_list()
+        reg_num = regions.get_shape()[1]
 
-        flat_regs = KB.concatenate(tf.unstack(regions))
+        flat_regs = KB.concatenate(tf.unstack(regions), axis=0)
         img_ids = KB.arange(self.__batch_size)
         target_img_ids = KB.flatten(KB.repeat(KB.reshape(img_ids, [-1, 1]), reg_num))
         pooling_size = [self.__pooling_h, self.__pooling_w]
 
         pooling_fmaps = tf.image.crop_and_resize(fmaps, flat_regs, target_img_ids, pooling_size)
-        output_shape = [self.__batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1]
+        #output_shape = (self.__batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1)
+        output_shape = (-1, reg_num, self.__pooling_h, self.__pooling_w, pooling_fmaps.get_shape()[3])
         return KB.reshape(pooling_fmaps, output_shape)
 
 
     def __roi_pooling_output_shape(self, inputs_shape):
-        fmaps_shapes = inputs_shape[0].as_list()
-        regions_shapes = inputs_shape[1].as_list()
-        return [None, regions_shapes[1], self.__pooling_h, self.__pooling_w, fmaps_shapes[3]]
+        return [None, inputs_shape[0][1], self.__pooling_h, self.__pooling_w, inputs_shape[0][3]]

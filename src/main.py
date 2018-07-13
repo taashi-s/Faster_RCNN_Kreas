@@ -1,10 +1,10 @@
 """ main """
 
-from keras.optimizers import SGD
 import numpy as np
 from faster_rcnn import FasterRCNN, TrainTarget
 
-INPUT_SHAPE = (2048, 2048, 3)
+INPUT_SHAPE = (256, 256, 3)
+#INPUT_SHAPE = (1280, 1280, 3)
 BATCH_SIZE = 256
 EPOCHS = 100
 
@@ -25,9 +25,7 @@ def train():
     train_taegets=[TrainTarget.BACKBONE, TrainTarget.RPN, TrainTarget.HEAD]
 
     network = FasterRCNN(INPUT_SHAPE, 2, anchors, train_taegets=train_taegets)
-    model = network.get_model()
-    model.compile(optimizer=SGD(momentum=0.9, decay=0.0001)
-                  , loss=[], metrics=[])
+    model = network.get_model_with_default_compile()
 #    his = model.fit(train_inputs, train_teachers
 #                    , batch_size=BATCH_SIZE
 #                    , epochs=EPOCHS

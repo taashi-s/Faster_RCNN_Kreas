@@ -34,4 +34,4 @@ class RPClassLoss():
 
 
     def __class_loss_output_shape(self, _):
-        return [1]
+        return [None, 1]

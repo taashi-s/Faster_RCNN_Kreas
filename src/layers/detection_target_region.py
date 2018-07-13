@@ -30,11 +30,9 @@ class DetectionTargetRegion(KELayer.Layer):
         return self.__detection_target_region(*inputs)
 
     def __detection_target_region(self, cls_labels, reg_labels, regions):
-        input_shape_list = regions.get_shape().as_list()
-
         norm_reg_labels = reg_labels
         if self.__image_shape is not None:
-            (img_h, img_w, _) = self.__image_shape
+            img_h, img_w, _ = self.__image_shape
             norm_reg_labels = RegionsUtils(reg_labels).normalize(img_h, img_w)
 
         target_clss = []
@@ -47,7 +45,7 @@ class DetectionTargetRegion(KELayer.Layer):
             target_data = self.__get_target_data(*data_s)
 
             target_reg, target_ofs, target_cls = target_data
-            target_clss.append(tf.expand_dims(target_cls, 2))
+            target_clss.append(target_cls)
             target_ofss.append(target_ofs)
             target_regs.append(target_reg)
         return [KB.stack(target_clss), KB.stack(target_ofss), KB.stack(target_regs)]
@@ -82,7 +80,7 @@ class DetectionTargetRegion(KELayer.Layer):
 
     def __get_negative(self, ious, positive_count):
         max_iou = KB.max(ious, axis=1)
-        ids = KB.flatten(tf.where(self.__excl_th <= max_iou and max_iou < self.__th))
+        ids = KB.flatten(tf.where((self.__excl_th <= max_iou) & (max_iou < self.__th)))
         count = self.__count_per_batch - positive_count
         return self.__get_shuffle_sample(ids, count)
 
@@ -95,7 +93,7 @@ class DetectionTargetRegion(KELayer.Layer):
 
 
     def __get_target_data(self, cls_lbl, reg_lbl, reg):
-        ious = RegionsUtils(reg).clac_iou(reg_lbl)
+        ious = RegionsUtils(reg).calc_iou(reg_lbl)
         positive_ids = self.__get_positive(ious)
         negative_ids = self.__get_negative(ious, KB.shape(positive_ids)[0])
 
@@ -116,17 +114,18 @@ class DetectionTargetRegion(KELayer.Layer):
 
 
     def __get_target_class_label(self, cls_lbl, target_cls_lbl_ids, negative_ids):
-        target_cls = KB.cast(KB.gather(cls_lbl, target_cls_lbl_ids), 'int32')
+        target_cls = KB.squeeze(KB.cast(KB.gather(cls_lbl, target_cls_lbl_ids), 'int32'), 1)
         padding = KB.zeros([KB.shape(negative_ids)[0]], dtype='int32')
-        return KB.concatenate((target_cls, padding))
+        return KB.expand_dims(KB.concatenate((target_cls, padding)), 1)
 
 
-    def __padding_data(self, target_reg, target_ofs, target_cls):
-        padding_count = KB.maximum(self.__count_per_batch - KB.shape(target_reg)[0], 0)
-        padding_target_reg = tf.pad(target_reg, [(0, padding_count), (0, 0)])
-        padding_target_ofs = tf.pad(target_ofs, [(0, padding_count), (0, 0)])
-        padding_target_cls = tf.pad(target_cls, [(0, padding_count), (0, 0)])
-        return padding_target_reg, padding_target_ofs, padding_target_cls
+    def __padding_data(self, regs, ofss, clss):
+        padding_count = KB.maximum(self.__count_per_batch - KB.shape(regs)[0], 0)
+        paddings = [(0, padding_count), (0, 0)]
+        padding_regs = KB.reshape(tf.pad(regs, paddings), (self.__count_per_batch, 4))
+        padding_ofss = KB.reshape(tf.pad(ofss, paddings), (self.__count_per_batch, 4))
+        padding_clss = KB.reshape(tf.pad(clss, paddings), (self.__count_per_batch, 1))
+        return padding_regs, padding_ofss, padding_clss
 
 
     def compute_output_shape(self, input_shape):

@@ -10,6 +10,7 @@ from keras.engine.topology import Input
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.core import Dense, Flatten, Activation, Reshape
 from keras.layers.normalization import BatchNormalization
+from keras.optimizers import SGD
 
 from subnetwork.resnet.resnet import ResNet
 from subnetwork.rpn.region_proposal_net import RegionproposalNet
@@ -68,7 +69,7 @@ class FasterRCNN():
             inputs += [inputs_rp_cls, inputs_rp_reg]
 
             rp_cls_losses = RPClassLoss()([inputs_rp_cls, rpn_cls_probs])
-            rp_reg_losses = RPRegionLoss()([inputs_rp_reg, rpn_cls_probs, rpn_regions])
+            rp_reg_losses = RPRegionLoss()([inputs_rp_cls, inputs_rp_reg, rpn_regions])
             outputs += [rp_cls_losses, rp_reg_losses]
 
         if train_head:
@@ -81,7 +82,6 @@ class FasterRCNN():
                                         , exclusion_threshold=0.1, count_per_batch=64
                                        )([inputs_cls, inputs_reg, rpn_prop_regs])
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
-
             clsses, offsets = self.__head_net(resnet, dtr_regions, class_num, batch_size=batch_size)
 
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
@@ -92,13 +92,13 @@ class FasterRCNN():
         self.__model = Model(inputs=inputs, outputs=outputs)
 
         for output in outputs:
-            self.__model.add_loss(tf.reduce_mean(output, keep_dims=True))
+            self.__model.add_loss(tf.reduce_mean(output))
 
 
     def __head_net(self, fmaps, regions, class_num, batch_size=5):
         roi_pool = RoIPooling(image_shape=self.__input_shape
                               , batch_size=batch_size)([fmaps, regions])
-        flt = TimeDistributed(Flatten())(roi_pool)
+        flt = TimeDistributed(Flatten(), input_shape=(64, 7, 7, 5120))(roi_pool)
 
         fc1 = TimeDistributed(Dense(2048))(flt)
         norm1 = TimeDistributed(BatchNormalization())(fc1)
@@ -136,4 +136,20 @@ class FasterRCNN():
         TODO : Write description
         get_model
         """
+        return self.__model
+
+    def default_compile(self):
+        """
+        TODO : Write description
+        default_compile
+        """
+        self.__model.compile(optimizer=SGD(momentum=0.9, decay=0.0001)
+                             , loss=[None] * len(self.__model.outputs), metrics=[])
+
+    def get_model_with_default_compile(self):
+        """
+        TODO : Write description
+        get_model_with_default_compile
+        """
+        self.default_compile()
         return self.__model

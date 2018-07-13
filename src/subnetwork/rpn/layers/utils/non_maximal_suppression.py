@@ -26,12 +26,4 @@ class NMS():
         regs = tf.gather(regions, ids)
         padding = tf.maximum(self.__limit - tf.shape(regs)[0], 0)
         padding_regs = tf.pad(regs, [(0, padding), (0, 0)])
-        return padding_regs
-
-
-    def nms(self, regions, scores):
-        """
-        TODO : Write description
-        nms
-        """
-        return self.__non_maximal_supperssion(regions, scores)
+        return tf.reshape(padding_regs, (self.__limit, 4))
