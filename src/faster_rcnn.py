@@ -64,7 +64,7 @@ class FasterRCNN():
                                ).get_network()
         rpn_cls_probs, rpn_regions, rpn_prop_regs = rpn
 
-        if train_rpn:
+        if train_rpn and not is_predict:
             inputs_rp_cls = Input(shape=[None, 1], dtype='int32')
             inputs_rp_reg = Input(shape=[None, 4], dtype='float32')
             inputs += [inputs_rp_cls, inputs_rp_reg]
@@ -73,7 +73,7 @@ class FasterRCNN():
             rp_reg_losses = RPRegionLoss()([inputs_rp_cls, inputs_rp_reg, rpn_regions])
             outputs += [rp_cls_losses, rp_reg_losses]
 
-        if train_head:
+        if train_head and not is_predict:
             inputs_cls = Input(shape=[None, 1], dtype='int32')
             inputs_reg = Input(shape=[None, 4], dtype='float32')
             inputs += [inputs_cls, inputs_reg]
@@ -88,6 +88,11 @@ class FasterRCNN():
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
             reg_losses = RegionLoss()([dtr_cls_labels, dtr_offsets_labels, offsets])
             outputs += [cls_losses, reg_losses]
+
+        if is_predict:
+            clsses, offsets = self.__head_net(resnet, rpn_prop_regs, class_num
+                                              , batch_size=batch_size)
+            outputs = [rpn_prop_regs, clsses, offsets]
 
         self.__network = outputs
         self.__model = Model(inputs=inputs, outputs=outputs)
