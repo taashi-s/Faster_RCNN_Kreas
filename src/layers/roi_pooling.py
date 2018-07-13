@@ -56,10 +56,9 @@ class RoIPooling():
         pooling_size = [self.__pooling_h, self.__pooling_w]
 
         pooling_fmaps = tf.image.crop_and_resize(fmaps, flat_regs, target_img_ids, pooling_size)
-        #output_shape = (self.__batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1)
-        output_shape = (-1, reg_num, self.__pooling_h, self.__pooling_w, pooling_fmaps.get_shape()[3])
+        output_shape = (self.__batch_size, reg_num, self.__pooling_h, self.__pooling_w, -1)
         return KB.reshape(pooling_fmaps, output_shape)
 
 
     def __roi_pooling_output_shape(self, inputs_shape):
-        return [None, inputs_shape[0][1], self.__pooling_h, self.__pooling_w, inputs_shape[0][3]]
+        return [None, inputs_shape[1][1], self.__pooling_h, self.__pooling_w, inputs_shape[0][3]]

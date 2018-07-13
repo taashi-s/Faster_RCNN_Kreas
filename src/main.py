@@ -4,8 +4,7 @@ import numpy as np
 import os
 from faster_rcnn import FasterRCNN, TrainTarget
 
-INPUT_SHAPE = (256, 256, 3)
-#INPUT_SHAPE = (1280, 1280, 3)
+INPUT_SHAPE = (512, 512, 3)
 BATCH_SIZE = 256
 EPOCHS = 100
 
@@ -25,7 +24,10 @@ def train():
     anchors = get_default_anchors()
     train_taegets=[TrainTarget.BACKBONE, TrainTarget.RPN, TrainTarget.HEAD]
 
-    network = FasterRCNN(INPUT_SHAPE, 2, anchors, train_taegets=train_taegets)
+    network = FasterRCNN(INPUT_SHAPE, 2, anchors
+                         #, train_taegets= None, is_predict=True
+                         , train_taegets= train_taegets, is_predict=False
+                        )
     model = network.get_model_with_default_compile()
     network.draw_model_summary(file_name=os.path.join(os.pardir, 'ModelLayers.png'))
 #    his = model.fit(train_inputs, train_teachers

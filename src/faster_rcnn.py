@@ -99,7 +99,12 @@ class FasterRCNN():
     def __head_net(self, fmaps, regions, class_num, batch_size=5):
         roi_pool = RoIPooling(image_shape=self.__input_shape
                               , batch_size=batch_size)([fmaps, regions])
-        flt = TimeDistributed(Flatten(), input_shape=(64, 7, 7, 5120))(roi_pool)
+
+        #regs_sh = roi_pool.get_shape()
+        #input_shape = (regs_sh[1], regs_sh[2], regs_sh[3], regs_sh[4])
+        #flt = TimeDistributed(Flatten(), input_shape=input_shape)(roi_pool)
+
+        flt = TimeDistributed(Flatten())(roi_pool)
 
         fc1 = TimeDistributed(Dense(2048))(flt)
         norm1 = TimeDistributed(BatchNormalization())(fc1)
