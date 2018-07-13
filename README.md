@@ -7,5 +7,10 @@
 ## Model Overview
 ![ModelOverview](./ModelOverview.png)
 
+## Model Layers
+![ModelLayers](./ModelLayers.png)
+
 ## memo
+ - Fix (or Add) RoI Pooling Layer
+ - Add name in each layers
 
