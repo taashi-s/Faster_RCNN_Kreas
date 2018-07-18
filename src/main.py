@@ -2,7 +2,7 @@
 
 import numpy as np
 import os
-from faster_rcnn import FasterRCNN, TrainTarget
+from network.faster_rcnn import FasterRCNN, TrainTarget
 
 INPUT_SHAPE = (512, 512, 3)
 BATCH_SIZE = 256

@@ -13,14 +13,14 @@ from keras.layers.normalization import BatchNormalization
 from keras.optimizers import SGD
 from keras.utils import plot_model
 
-from subnetwork.resnet.resnet import ResNet
-from subnetwork.rpn.region_proposal_net import RegionproposalNet
-from layers.rp_class_loss import RPClassLoss
-from layers.rp_region_loss import RPRegionLoss
-from layers.detection_target_region import DetectionTargetRegion
-from layers.class_loss import ClassLoss
-from layers.region_loss import RegionLoss
-from layers.roi_pooling import RoIPooling
+from .subnetwork.resnet.resnet import ResNet
+from .subnetwork.rpn.region_proposal_net import RegionproposalNet
+from .layers.rp_class_loss import RPClassLoss
+from .layers.rp_region_loss import RPRegionLoss
+from .layers.detection_target_region import DetectionTargetRegion
+from .layers.class_loss import ClassLoss
+from .layers.region_loss import RegionLoss
+from .layers.roi_pooling import RoIPooling
 
 class TrainTarget(Enum):
     """
