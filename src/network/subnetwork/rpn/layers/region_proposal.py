@@ -1,6 +1,6 @@
 """
 TODO : Write description
-Region proposal Layer Module
+Region Proposal Layer Module
 """
 
 import numpy as np
@@ -8,13 +8,12 @@ import tensorflow as tf
 import keras.backend as KB
 from keras.layers.core import Lambda
 
-from .utils.regions_utils import RegionsUtils
-from .utils.non_maximal_suppression import NMS
+from .utils import RegionsUtils, NMS
 
-class Regionproposal():
+class RegionProposal():
     """
     TODO : Write description
-    Region proposal Layer class
+    Region Proposal Layer class
 
     Expecte inputs shape : [ class_logits : [B, anchor_boxes, 2]
                            , region_offsets : [B, anchor_boxes, 4]

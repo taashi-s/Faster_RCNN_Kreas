@@ -1,6 +1,6 @@
 """
 TODO : Write description
-Region proposal Network Module
+Region Proposal Network Module
 """
 
 from keras.models import Model
@@ -8,12 +8,12 @@ from keras.engine.topology import Input
 from keras.layers.core import Reshape, Activation
 from keras.layers.convolutional import Conv2D
 
-from .layers.region_proposal import Regionproposal
+from .layers import RegionProposal
 
-class RegionproposalNet():
+class RegionProposalNet():
     """
     TODO : Write description
-    RegionproposalNet class
+    Region Proposal Net class
     """
 
     def __init__(self, input_shape, anchors, input_layers=None, prev_layers=None
@@ -46,7 +46,7 @@ class RegionproposalNet():
         # [B, h, w, box_by_anchor * 4] -> [B, anchor boxes, 4]
         regions = Reshape([-1, 4])(reg_layer)
 
-        prop_regs = Regionproposal(anchors, image_shape=image_shape, batch_size=batch_size
+        prop_regs = RegionProposal(anchors, image_shape=image_shape, batch_size=batch_size
                                    , count_limit_post=1000 if is_predict else 2000
                                   )([cls_probs, regions])
 

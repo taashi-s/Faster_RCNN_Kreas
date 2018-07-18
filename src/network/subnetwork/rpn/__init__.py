@@ -1,5 +1,2 @@
-"""
-__init__
-"""
-
-from . import region_proposal_net
+from .region_proposal_net import RegionProposalNet
+from .layers import utils

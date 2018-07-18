@@ -1,5 +1,1 @@
-"""
-__init__
-"""
-
-from . import region_proposal
+from .region_proposal import RegionProposal
