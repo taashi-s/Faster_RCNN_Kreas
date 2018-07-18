@@ -23,6 +23,14 @@ class RegionsUtils():
         return self.__regions / KB.variable([max_h, max_w, max_h, max_w])
 
 
+    def denormalize(self, max_h, max_w):
+        """
+        TODO : Write description
+        denormalize
+        """
+        return self.__regions * KB.variable([max_h, max_w, max_h, max_w])
+
+
     def offset(self, offsets):
         """
         TODO : Write description
