@@ -10,7 +10,7 @@ def class_labels_mean_loss(labels, preds):
     Class Labels mean loss
     """
     loss = KB.sparse_categorical_crossentropy(labels, preds)
-    return lossse_mean(loss)
+    return losses_mean(loss)
 
 
 def offset_labels_mean_loss(labels, preds):
@@ -18,10 +18,13 @@ def offset_labels_mean_loss(labels, preds):
     Offset Labels mean loss
     """
     loss = smooth(labels, preds)
-    return lossse_mean(loss)
+    return losses_mean(loss)
 
 
-def lossse_mean(losses):
+def losses_mean(losses):
+    """
+    Losses mean
+    """
     return KB.switch(tf.size(losses) > 0, KB.mean(losses), KB.constant(0.0))
 
 

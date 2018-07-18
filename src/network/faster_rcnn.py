@@ -72,7 +72,6 @@ class FasterRCNN():
             outputs += [rp_cls_losses, rp_reg_losses]
             self.__rpn_loss_network = (inputs, outputs)
 
-        self.__prev_head_network = None
         self.__head_network = None
         self.__head_loss_network = None
         if train_head and not is_predict:
@@ -85,9 +84,8 @@ class FasterRCNN():
                                         , exclusion_threshold=0.1, count_per_batch=64
                                        )([inputs_cls, inputs_reg, rpn_prop_regs])
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
-            self.__prev_head_network = (inputs, dtr)
-            clsses, offsets = self.__head_net(backbone, dtr_regions, class_num
-                                              , batch_size=batch_size)
+            clsses, offsets = self.head_net(backbone, dtr_regions, class_num
+                                            , batch_size=batch_size)
             self.__head_network = (inputs, [clsses, offsets])
 
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
@@ -96,8 +94,8 @@ class FasterRCNN():
             self.__head_loss_network = (inputs, outputs)
 
         if is_predict:
-            clsses, offsets = self.__head_net(backbone, rpn_prop_regs, class_num
-                                              , batch_size=batch_size)
+            clsses, offsets = self.head_net(backbone, rpn_prop_regs, class_num
+                                            , batch_size=batch_size)
             self.__head_network = (inputs, [clsses, offsets])
             outputs = [rpn_prop_regs, clsses, offsets]
 
@@ -108,14 +106,14 @@ class FasterRCNN():
             self.__model.add_loss(tf.reduce_mean(output))
 
 
-    def __head_net(self, fmaps, regions, class_num, batch_size=5):
+    def head_net(self, fmaps, regions, class_num, batch_size=5):
+        """
+        TODO : Write description
+        head_net
+        """
+
         roi_pool = RoIPooling(image_shape=self.__input_shape
                               , batch_size=batch_size)([fmaps, regions])
-
-        #regs_sh = roi_pool.get_shape()
-        #input_shape = (regs_sh[1], regs_sh[2], regs_sh[3], regs_sh[4])
-        #flt = TimeDistributed(Flatten(), input_shape=input_shape)(roi_pool)
-
         flt = TimeDistributed(Flatten())(roi_pool)
 
         fc1 = TimeDistributed(Dense(2048))(flt)
@@ -165,14 +163,6 @@ class FasterRCNN():
         get_rpn_loss_network
         """
         return self.__rpn_loss_network
-
-
-    def get_prev_head_network(self):
-        """
-        TODO : Write description
-        get_prev_head_network
-        """
-        return self.__prev_head_network
 
 
     def get_head_network(self):
