@@ -272,4 +272,8 @@ class FasterRCNN():
 
 
     def draw_model_summary(self, file_name='model.png'):
+        """
+        TODO : Write description
+        draw_model_summary
+        """
         plot_model(self.__model, to_file=file_name)
