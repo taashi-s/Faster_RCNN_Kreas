@@ -21,10 +21,9 @@ def train():
     test_inputs = None
     test_teachers = None
 
-    anchors = get_default_anchors()
     train_taegets=[TrainTarget.BACKBONE, TrainTarget.RPN, TrainTarget.HEAD]
 
-    network = FasterRCNN(INPUT_SHAPE, 2, anchors
+    network = FasterRCNN(INPUT_SHAPE, 2
                          #, train_taegets= None, is_predict=True
                          , train_taegets= train_taegets, is_predict=False
                         )
