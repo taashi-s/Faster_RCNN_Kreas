@@ -6,10 +6,11 @@ Faster R-CNN Module
 from enum import Enum
 import numpy as np
 import tensorflow as tf
+import keras.backend as KB
 from keras.models import Model
 from keras.engine.topology import Input
 from keras.layers.wrappers import TimeDistributed
-from keras.layers.core import Dense, Flatten, Activation, Reshape
+from keras.layers.core import Dense, Flatten, Activation, Reshape, Lambda
 from keras.layers.normalization import BatchNormalization
 from keras.optimizers import SGD
 from keras.utils import plot_model
@@ -105,8 +106,12 @@ class FasterRCNN():
         self.__network = (inputs, outputs)
         self.__model = Model(inputs=inputs, outputs=outputs)
 
-        for output in outputs:
-            self.__model.add_loss(tf.reduce_mean(output))
+        if not is_predict:
+            for output in outputs:
+                self.__model.add_loss(tf.reduce_mean(output))
+        else:
+            dummy_loss = Lambda(lambda x: KB.constant(0.0))([inputs_images])
+            self.__model.add_loss(tf.reduce_mean(dummy_loss))
 
 
     def head_net(self, fmaps, regions, class_num, batch_size=5):
