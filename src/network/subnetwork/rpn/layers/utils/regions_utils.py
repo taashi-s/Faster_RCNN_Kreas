@@ -4,6 +4,7 @@ Regions Utils Module
 """
 
 import keras.backend as KB
+import numpy as np
 
 class RegionsUtils():
     """
@@ -65,6 +66,20 @@ class RegionsUtils():
         return t_p / (g_t + p_r - t_p)
 
 
+    def calc_iou_np(self, target_regions):
+        """
+        TODO : Write description
+        calc_iou_np
+        """
+        pos_tl = np.maximum(self.__regions[:, None, :2], target_regions[:, :2])
+        pos_br = np.minimum(self.__regions[:, None, 2:], target_regions[:, 2:])
+
+        t_p = np.prod(pos_br - pos_tl, axis=2) * np.all(pos_br > pos_tl, axis=2).astype('float32')
+        g_t = np.prod(self.__regions[:, 2:] - self.__regions[:, :2], axis=1)
+        p_r = np.prod(target_regions[:, 2:] - target_regions[:, :2], axis=1)
+        return t_p / (g_t[:, None] + p_r - t_p)
+
+
     def calc_offset(self, target_region):
         """
         TODO : Write description
@@ -90,3 +105,28 @@ class RegionsUtils():
         len_w = KB.log(target_width / width)
 
         return KB.transpose(KB.stack((pos_y, pos_x, len_h, len_w), axis=0))
+
+
+    def calc_offset_np(self, target_region):
+        EPSILON = 1e-07
+        base_region = self.__regions
+
+        height = base_region[:, 2] - base_region[:, 0]
+        width = base_region[:, 3] - base_region[:, 1]
+        ctr_y = base_region[:, 0] + 0.5 * height
+        ctr_x = base_region[:, 1] + 0.5 * width
+
+        target_height = target_region[:, 2] - target_region[:, 0]
+        target_width = target_region[:, 3] - target_region[:, 1]
+        target_ctr_y = target_region[:, 0] + 0.5 * target_height
+        target_ctr_x = target_region[:, 1] + 0.5 * target_width
+
+        height = np.maximum(height, EPSILON)
+        width = np.maximum(width, EPSILON)
+
+        pos_y = (target_ctr_y - ctr_y) / height
+        pos_x = (target_ctr_x - ctr_x) / width
+        len_h = np.log(target_height / height)
+        len_w = np.log(target_width / width)
+
+        return np.transpose(np.stack((pos_y, pos_x, len_h, len_w), axis=0))

@@ -16,8 +16,10 @@ from keras.optimizers import SGD
 from keras.utils import plot_model
 
 from .subnetwork import ResNet, RegionProposalNet
+from .subnetwork import rpn_input_data as rpn_data
 from .layers import DetectionTargetRegion, RoIPooling
 from .layers import RPClassLoss, RPRegionLoss, ClassLoss, RegionLoss
+
 
 class TrainTarget(Enum):
     """
@@ -56,7 +58,7 @@ class FasterRCNN():
 
         self.__anchors = anchors
         if self.__anchors is None:
-            self.__anchors = self.get_anchors()
+            self.__anchors = rpn_data.get_anchors(self.__input_shape)
         rpn = RegionProposalNet(backbone.get_shape(), self.__anchors, input_layers=inputs_images
                                 , image_shape=self.__input_shape, prev_layers=backbone
                                 , batch_size=batch_size, is_predict=is_predict
@@ -203,59 +205,6 @@ class FasterRCNN():
         get_model
         """
         return self.__model
-
-
-    def get_anchors(self, scales=None, ratios=None):
-        """
-        TODO : Write description
-        get_anchors
-        """
-        base_pos = self.__get_anchor_base_positions(scales=scales, ratios=ratios)
-        shifts = self.__get_anchor_shifts()
-        return self.__create_anchors(*base_pos, *shifts)
-
-
-    def __calculate_backbone_reduction_ratio(self):
-        image_h, image_w, _ = self.__input_shape
-        _, backbone_h, backbone_w, _ = (self.__backbone_network[1]).get_shape().as_list()
-        return (image_h // backbone_h, image_w // backbone_w)
-
-
-    def __get_anchor_base_positions(self, scales=None, ratios=None):
-        anchor_scales = (32, 64, 128)
-        if scales is not None:
-            anchor_scales = scales
-        anchor_ratios = [0.5, 1, 2]
-        if ratios is not None:
-            anchor_ratios = ratios
-
-        scales_m, ratios_m = np.meshgrid(np.array(anchor_scales), np.array(anchor_ratios))
-
-        scales_f = scales_m.flatten()
-        ratios_f = ratios_m.flatten()
-
-        pos_hs = scales_f / np.sqrt(ratios_f)
-        pos_ws = scales_f * np.sqrt(ratios_f)
-
-        return pos_hs, pos_ws
-
-
-    def __get_anchor_shifts(self):
-        image_h, image_w, _ = self.__input_shape
-        magni_h, magni_w = 1, 1 #self.__calculate_backbone_reduction_ratio()
-
-        shift_hs = np.arange(0, image_h, magni_h)
-        shift_ws = np.arange(0, image_w, magni_w)
-        return np.meshgrid(shift_ws, shift_hs)
-
-
-    def __create_anchors(self, pos_ws, pos_hs, shift_xs, shift_ys):
-        widths, centers_x = np.meshgrid(pos_ws, shift_xs)
-        heights, centers_y = np.meshgrid(pos_hs, shift_ys)
-
-        centers = np.stack([centers_y, centers_x], axis=2).reshape([-1, 2])
-        sizes = np.stack([heights, widths], axis=2).reshape([-1, 2])
-        return np.concatenate([centers - 0.5 * sizes, centers + 0.5 * sizes], axis=1)
 
 
     def default_compile(self):
