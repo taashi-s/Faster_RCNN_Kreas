@@ -48,7 +48,7 @@ class FasterRCNN():
         inputs = []
         outputs = []
 
-        inputs_images = Input(shape=self.__input_shape)
+        inputs_images = Input(shape=self.__input_shape, name='image_input')
         inputs += [inputs_images]
 
         backbone = ResNet(inputs_images.get_shape(), input_layers=inputs_images
@@ -69,8 +69,8 @@ class FasterRCNN():
 
         self.__rpn_loss_network = None
         if train_rpn and not is_predict:
-            inputs_rp_cls = Input(shape=[None, 1], dtype='int32')
-            inputs_rp_reg = Input(shape=[None, 4], dtype='float32')
+            inputs_rp_cls = Input(shape=[None, 1], dtype='int32', name='rpn_cls_input')
+            inputs_rp_reg = Input(shape=[None, 4], dtype='float32', name='rpn_reg_input')
             inputs += [inputs_rp_cls, inputs_rp_reg]
 
             rp_cls_losses = RPClassLoss()([inputs_rp_cls, rpn_cls_probs])
@@ -81,8 +81,8 @@ class FasterRCNN():
         self.__head_network = None
         self.__head_loss_network = None
         if train_head and not is_predict:
-            inputs_cls = Input(shape=[None, 1], dtype='int32')
-            inputs_reg = Input(shape=[None, 4], dtype='float32')
+            inputs_cls = Input(shape=[None, 1], dtype='int32', name='head_cls_input')
+            inputs_reg = Input(shape=[None, 4], dtype='float32', name='head_reg_input')
             inputs += [inputs_cls, inputs_reg]
 
             dtr = DetectionTargetRegion(positive_threshold=0.5, positive_ratio=0.33
@@ -91,7 +91,7 @@ class FasterRCNN():
                                        )([inputs_cls, inputs_reg, rpn_prop_regs])
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
             clsses, offsets = self.head_net(backbone, dtr_regions, class_num
-                                            , batch_size=batch_size)
+                                            , trainable=train_head, batch_size=batch_size)
             self.__head_network = (inputs, [clsses, offsets])
 
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
@@ -101,7 +101,7 @@ class FasterRCNN():
 
         if is_predict:
             clsses, offsets = self.head_net(backbone, rpn_prop_regs, class_num
-                                            , batch_size=batch_size)
+                                            , trainable=False, batch_size=batch_size)
             self.__head_network = (inputs, [clsses, offsets])
             outputs = [rpn_prop_regs, clsses, offsets]
 
@@ -116,7 +116,7 @@ class FasterRCNN():
             self.__model.add_loss(tf.reduce_mean(dummy_loss))
 
 
-    def head_net(self, fmaps, regions, class_num, batch_size=5):
+    def head_net(self, fmaps, regions, class_num, trainable=True, batch_size=5):
         """
         TODO : Write description
         head_net
@@ -126,18 +126,20 @@ class FasterRCNN():
                               , batch_size=batch_size)([fmaps, regions])
         flt = TimeDistributed(Flatten())(roi_pool)
 
-        fc1 = TimeDistributed(Dense(2048))(flt)
+        #fc1 = TimeDistributed(Dense(2048, trainable=trainable))(flt)
+        fc1 = TimeDistributed(Dense(512, trainable=trainable))(flt)
         norm1 = TimeDistributed(BatchNormalization())(fc1)
         act1 = TimeDistributed(Activation('relu'))(norm1)
-        fc2 = TimeDistributed(Dense(2048))(act1)
+        #fc2 = TimeDistributed(Dense(2048, trainable=trainable))(act1)
+        fc2 = TimeDistributed(Dense(512, trainable=trainable))(act1)
         norm2 = TimeDistributed(BatchNormalization())(fc2)
         act2 = TimeDistributed(Activation('relu'))(norm2)
         outputs = act2
 
-        cls_logits = TimeDistributed(Dense(class_num))(outputs)
+        cls_logits = TimeDistributed(Dense(class_num, trainable=trainable))(outputs)
         clsses = Activation('softmax')(cls_logits)
 
-        ofs_tmp = TimeDistributed(Dense(class_num * 4))(outputs)
+        ofs_tmp = TimeDistributed(Dense(class_num * 4, trainable=trainable))(outputs)
         offsets = Reshape([-1, class_num, 4])(ofs_tmp)
 
         return clsses, offsets
