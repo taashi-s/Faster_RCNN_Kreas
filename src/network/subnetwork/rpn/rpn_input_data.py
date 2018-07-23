@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import keras.backend as KB
 
-from layers.utils import RegionsUtils
+from .layers.utils import RegionsUtils
 
 NEUTRAL_LABEL = -1
 NON_OBJECT_LABEL = 0
