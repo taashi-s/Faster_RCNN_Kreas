@@ -21,11 +21,11 @@ def train():
     test_inputs = None
     test_teachers = None
 
-    train_taegets=[TrainTarget.BACKBONE, TrainTarget.RPN, TrainTarget.HEAD]
+    train_targets=[TrainTarget.BACKBONE, TrainTarget.RPN, TrainTarget.HEAD]
 
     network = FasterRCNN(INPUT_SHAPE, 2
-                         #, train_taegets= None, is_predict=True
-                         , train_taegets= train_taegets, is_predict=False
+                         #, train_targets= None, is_predict=True
+                         , train_targets= train_targets, is_predict=False
                         )
     model = network.get_model_with_default_compile()
     network.draw_model_summary(file_name=os.path.join(os.pardir, 'ModelLayers.png'))

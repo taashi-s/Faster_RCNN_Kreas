@@ -37,13 +37,13 @@ class FasterRCNN():
     """
 
     def __init__(self, input_shape, class_num, anchors=None
-                 , batch_size=5, is_predict=False, train_taegets=None):
+                 , batch_size=5, is_predict=False, train_targets=None):
         self.__input_shape = input_shape
-        if train_taegets is None:
-            train_taegets = []
-        train_backbone = TrainTarget.BACKBONE in train_taegets
-        train_rpn = TrainTarget.RPN in train_taegets
-        train_head = TrainTarget.HEAD in train_taegets
+        if train_targets is None:
+            train_targets = []
+        train_backbone = TrainTarget.BACKBONE in train_targets
+        train_rpn = TrainTarget.RPN in train_targets
+        train_head = TrainTarget.HEAD in train_targets
 
         inputs = []
         outputs = []
