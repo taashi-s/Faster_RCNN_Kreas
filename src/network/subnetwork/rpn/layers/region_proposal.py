@@ -21,7 +21,8 @@ class RegionProposal():
 
     """
 
-    def __init__(self, anchors, count_limit_pre=6000, count_limit_post=2000
+    #def __init__(self, anchors, count_limit_pre=6000, count_limit_post=2000
+    def __init__(self, anchors, count_limit_pre=60, count_limit_post=20
                  , image_shape=None, batch_size=5
                  , threshould=0.7, refinement_std_dev=None):
         self.__anchors = anchors

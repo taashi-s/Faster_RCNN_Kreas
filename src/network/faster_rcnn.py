@@ -87,7 +87,7 @@ class FasterRCNN():
 
             dtr = DetectionTargetRegion(positive_threshold=0.5, positive_ratio=0.33
                                         , image_shape=self.__input_shape, batch_size=batch_size
-                                        , exclusion_threshold=0.1, count_per_batch=64
+                                        , exclusion_threshold=0.1, count_per_batch=20
                                        )([inputs_cls, inputs_reg, rpn_prop_regs])
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
             clsses, offsets = self.head_net(backbone, dtr_regions, class_num

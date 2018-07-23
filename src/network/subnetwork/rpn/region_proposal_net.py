@@ -47,7 +47,7 @@ class RegionProposalNet():
         regions = Reshape([-1, 4])(reg_layer)
 
         prop_regs = RegionProposal(anchors, image_shape=image_shape, batch_size=batch_size
-                                   , count_limit_post=1000 if is_predict else 2000
+                                   , count_limit_post=10 if is_predict else 20
                                   )([cls_probs, regions])
 
         outputs = ([cls_probs, regions, prop_regs])

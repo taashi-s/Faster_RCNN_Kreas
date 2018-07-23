@@ -43,7 +43,7 @@ def __get_anchor_base_positions(scales=None, ratios=None):
 
 def __get_anchor_shifts(input_shape):
     image_h, image_w, _ = input_shape
-    magni_h, magni_w = 1, 1
+    magni_h, magni_w = 5, 5
 
     shift_hs = np.arange(0, image_h, magni_h)
     shift_ws = np.arange(0, image_w, magni_w)
@@ -86,6 +86,7 @@ def make_inputs(anchors, regs, height, width
     ofs_label /= np.array(ref_sd)
     cls_label = __unmap(cls_label, anhors_num, inside_ids, fill=-1)
     ofs_label = __unmap(ofs_label, anhors_num, inside_ids, fill=0)
+    cls_label = np.expand_dims(cls_label, axis=1)
     return ofs_label, cls_label
 
 
