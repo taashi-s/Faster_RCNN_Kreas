@@ -50,11 +50,10 @@ class FasterRCNN():
 
         inputs_images = Input(shape=self.__input_shape, name='image_input')
         inputs += [inputs_images]
-
         backbone = ResNet(inputs_images.get_shape(), input_layers=inputs_images
                           , trainable=train_backbone
                          ).get_residual_network()
-        self.__backbone_network = (inputs, backbone)
+        self.__backbone_network = (inputs[:], backbone)
 
         self.__anchors = anchors
         if self.__anchors is None:
@@ -65,7 +64,7 @@ class FasterRCNN():
                                 , trainable=train_rpn
                                ).get_network()
         rpn_cls_probs, rpn_regions, rpn_prop_regs = rpn
-        self.__rpn_network = (inputs, rpn)
+        self.__rpn_network = (inputs[:], rpn)
 
         self.__rpn_loss_network = None
         if train_rpn and not is_predict:
@@ -76,7 +75,7 @@ class FasterRCNN():
             rp_cls_losses = RPClassLoss()([inputs_rp_cls, rpn_cls_probs])
             rp_reg_losses = RPRegionLoss()([inputs_rp_cls, inputs_rp_reg, rpn_regions])
             outputs += [rp_cls_losses, rp_reg_losses]
-            self.__rpn_loss_network = (inputs, outputs)
+            self.__rpn_loss_network = (inputs[:], outputs[:])
 
         self.__head_network = None
         self.__head_loss_network = None
@@ -92,17 +91,17 @@ class FasterRCNN():
             dtr_cls_labels, dtr_offsets_labels, dtr_regions = dtr
             clsses, offsets = self.head_net(backbone, dtr_regions, class_num
                                             , trainable=train_head, batch_size=batch_size)
-            self.__head_network = (inputs, [clsses, offsets])
+            self.__head_network = (inputs[:], [clsses, offsets])
 
             cls_losses = ClassLoss()([dtr_cls_labels, clsses])
             reg_losses = RegionLoss()([dtr_cls_labels, dtr_offsets_labels, offsets])
             outputs += [cls_losses, reg_losses]
-            self.__head_loss_network = (inputs, outputs)
+            self.__head_loss_network = (inputs[:], outputs[:])
 
         if is_predict:
             clsses, offsets = self.head_net(backbone, rpn_prop_regs, class_num
                                             , trainable=False, batch_size=batch_size)
-            self.__head_network = (inputs, [clsses, offsets])
+            self.__head_network = (inputs[:], [clsses, offsets])
             outputs = [rpn_prop_regs, clsses, offsets]
 
         self.__network = (inputs, outputs)

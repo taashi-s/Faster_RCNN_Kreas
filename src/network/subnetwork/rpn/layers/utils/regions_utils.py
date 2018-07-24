@@ -63,7 +63,7 @@ class RegionsUtils():
         t_p = KB.prod(pos_br - pos_tl, axis=2) * KB.cast(KB.all(pos_br > pos_tl, axis=2), 'float32')
         g_t = KB.prod(self.__regions[:, 2:] - self.__regions[:, :2], axis=1)
         p_r = KB.prod(target_regions[:, 2:] - target_regions[:, :2], axis=1)
-        return t_p / (g_t + p_r - t_p)
+        return t_p / (g_t[:, None] + p_r - t_p)
 
 
     def calc_iou_np(self, target_regions):

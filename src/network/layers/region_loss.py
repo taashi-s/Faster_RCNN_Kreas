@@ -26,14 +26,16 @@ class RegionLoss():
 
 
     def __region_loss(self, cls_labels, ofs_labels, preds):
-        positive_ids = tf.where(cls_labels > 0)
+        cls_lbl_2d = KB.squeeze(cls_labels, 2)
+        positive_ids = tf.where(cls_lbl_2d > 0)
         target_batch_ids = KB.cast(positive_ids[:, 0], 'int32')
         target_region_ids = KB.cast(positive_ids[:, 1], 'int32')
-        target_class_ids = KB.cast(tf.gather_nd(cls_labels, positive_ids), 'int32')
+        target_class_ids = KB.cast(tf.gather_nd(cls_lbl_2d, positive_ids), 'int32')
         target_pred_ids = KB.stack((target_batch_ids, target_region_ids, target_class_ids), axis=1)
-
+        
         target_label = tf.gather_nd(ofs_labels, positive_ids)
         target_pred = tf.gather_nd(preds, target_pred_ids)
+
         return lu.offset_labels_mean_loss(target_label, target_pred)
 
 
