@@ -33,14 +33,15 @@ class RoIPooling():
 
     """
 
-    def __init__(self, batch_size=5, pooling=(7, 7), image_shape=None):
+    def __init__(self, batch_size=5, pooling=(7, 7), image_shape=None, name='roi_pooling'):
         (pooling_h, pooling_w) = KCUtils.normalize_tuple(pooling, 2, 'pooling')
         self.__pooling_h = pooling_h
         self.__pooling_w = pooling_w
         self.__image_shape = image_shape
         self.__batch_size = batch_size
         self.__layer = Lambda(lambda inputs: self.__roi_pooling(*inputs)
-                              , output_shape=self.__roi_pooling_output_shape)
+                              , output_shape=self.__roi_pooling_output_shape
+                              , name=name)
 
 
     def __call__(self, inputs):

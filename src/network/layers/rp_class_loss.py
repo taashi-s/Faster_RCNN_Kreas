@@ -14,9 +14,10 @@ class RPClassLoss():
     Region proposal Class Loss Layer class
     """
 
-    def __init__(self):
+    def __init__(self, name='rp_class_loss'):
         self.__layer = Lambda(lambda inputs: self.__class_loss(*inputs)
-                            , output_shape=self.__class_loss_output_shape)
+                            , output_shape=self.__class_loss_output_shape
+                            , name=name)
 
 
     def __call__(self, inputs):

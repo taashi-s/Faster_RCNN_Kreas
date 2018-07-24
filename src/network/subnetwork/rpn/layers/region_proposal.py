@@ -21,10 +21,9 @@ class RegionProposal():
 
     """
 
-    #def __init__(self, anchors, count_limit_pre=6000, count_limit_post=2000
-    def __init__(self, anchors, count_limit_pre=60, count_limit_post=20
+    def __init__(self, anchors, count_limit_pre=6000, count_limit_post=2000
                  , image_shape=None, batch_size=5
-                 , threshould=0.7, refinement_std_dev=None):
+                 , threshould=0.7, refinement_std_dev=None, name='region_proposal'):
         self.__anchors = anchors
         self.__cl_pre = count_limit_pre
         self.__cl_post = count_limit_post
@@ -35,7 +34,8 @@ class RegionProposal():
         if refinement_std_dev is not None:
             self.__ref_sd = refinement_std_dev
         self.__layer = Lambda(lambda inputs: self.__region_proposal(*inputs)
-                              , output_shape=self.__region_proposal_output_shape)
+                              , output_shape=self.__region_proposal_output_shape
+                              , name=name)
 
 
     def __call__(self, inputs):

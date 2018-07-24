@@ -15,9 +15,10 @@ class RegionLoss():
     Region Loss Layer class
     """
 
-    def __init__(self):
+    def __init__(self, name='region_loss'):
         self.__layer = Lambda(lambda inputs: self.__region_loss(*inputs)
-                              , output_shape=self.__region_loss_output_shape)
+                              , output_shape=self.__region_loss_output_shape
+                              , name=name)
 
 
     def __call__(self, inputs):

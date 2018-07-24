@@ -112,7 +112,7 @@ class FasterRCNN():
             for output in outputs:
                 self.__model.add_loss(tf.reduce_mean(output))
         else:
-            dummy_loss = Lambda(lambda x: KB.constant(0.0))([inputs_images])
+            dummy_loss = Lambda(lambda x: KB.constant(0.0), name='dummy_loss')([inputs_images])
             self.__model.add_loss(tf.reduce_mean(dummy_loss))
 
 
