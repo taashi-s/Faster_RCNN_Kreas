@@ -12,13 +12,13 @@ NEUTRAL_LABEL = -1
 NON_OBJECT_LABEL = 0
 OBJECT_LABEL = 1
 
-def get_anchors(input_shape, scales=None, ratios=None):
+def get_anchors(image_size, input_shape, scales=None, ratios=None):
     """
     TODO : Write description
     get_anchors
     """
     base_pos = __get_anchor_base_positions(scales=scales, ratios=ratios)
-    shifts = __get_anchor_shifts(input_shape)
+    shifts = __get_anchor_shifts(image_size, input_shape)
     return __create_anchors(*base_pos, *shifts)
 
 
@@ -41,9 +41,10 @@ def __get_anchor_base_positions(scales=None, ratios=None):
     return pos_hs, pos_ws
 
 
-def __get_anchor_shifts(input_shape):
-    image_h, image_w, _ = input_shape
-    magni_h, magni_w = 5, 5
+def __get_anchor_shifts(image_shape, input_shape):
+    image_h, image_w, _ = image_shape
+    input_h, input_w, _ = input_shape
+    magni_h, magni_w = (image_h // input_h, image_w // input_w)
 
     shift_hs = np.arange(0, image_h, magni_h)
     shift_ws = np.arange(0, image_w, magni_w)
@@ -56,6 +57,7 @@ def __create_anchors(pos_ws, pos_hs, shift_xs, shift_ys):
 
     centers = np.stack([centers_y, centers_x], axis=2).reshape([-1, 2])
     sizes = np.stack([heights, widths], axis=2).reshape([-1, 2])
+    aaa = np.concatenate([centers - 0.5 * sizes, centers + 0.5 * sizes], axis=1).astype('float32')
     return np.concatenate([centers - 0.5 * sizes, centers + 0.5 * sizes], axis=1).astype('float32')
 
 
@@ -94,7 +96,7 @@ def __make_cls_label(anchors, regs
                      , positive_threshold, negative_threshold
                      , sample_num, positive_rate):
 
-    cls_lbl = np.full((len(anchors)), -1)
+    cls_lbl = np.full((len(anchors)), NEUTRAL_LABEL)
     argmax_ious_per_anchor, max_ious, argmax_ious = __calc_ious(anchors, regs)
 
     cls_lbl[argmax_ious] = OBJECT_LABEL

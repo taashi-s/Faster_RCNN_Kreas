@@ -25,6 +25,8 @@ class RPClassLoss():
 
 
     def __class_loss(self, labels, preds):
+        labels = tf.cast(labels, tf.float32)
+
         base_labels = tf.squeeze(labels, -1)
         ids = tf.where(base_labels > -1)
 

@@ -57,7 +57,7 @@ class FasterRCNN():
 
         self.__anchors = anchors
         if self.__anchors is None:
-            self.__anchors = rpn_data.get_anchors(self.__input_shape)
+            self.__anchors = rpn_data.get_anchors(self.__input_shape, (backbone[0]).get_shape())
         rpn = RegionProposalNet(backbone.get_shape(), self.__anchors, input_layers=inputs_images
                                 , image_shape=self.__input_shape, prev_layers=backbone
                                 , batch_size=batch_size, is_predict=is_predict
@@ -68,7 +68,7 @@ class FasterRCNN():
 
         self.__rpn_loss_network = None
         if train_rpn and not is_predict:
-            inputs_rp_cls = Input(shape=[None, 1], dtype='int32', name='rpn_cls_input')
+            inputs_rp_cls = Input(shape=[None, 1], dtype='float32', name='rpn_cls_input')
             inputs_rp_reg = Input(shape=[None, 4], dtype='float32', name='rpn_reg_input')
             inputs += [inputs_rp_cls, inputs_rp_reg]
 
@@ -232,3 +232,12 @@ class FasterRCNN():
         draw_model_summary
         """
         plot_model(self.__model, to_file=file_name)
+
+    @staticmethod
+    def get_backbone_output_shape(input_shape):
+        """
+        get_backbone_output_shape
+        """
+        backbone = ResNet(input_shape).get_residual_network()
+        sh = (backbone[0]).get_shape().as_list()
+        return (sh[0], sh[1], sh[2])

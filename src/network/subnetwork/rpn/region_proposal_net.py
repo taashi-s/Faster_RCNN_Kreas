@@ -3,10 +3,12 @@ TODO : Write description
 Region Proposal Network Module
 """
 
+import tensorflow as tf
 from keras.models import Model
 from keras.engine.topology import Input
-from keras.layers.core import Reshape, Activation
+from keras.layers.core import Reshape, Activation, Lambda
 from keras.layers.convolutional import Conv2D
+from keras.layers.normalization import BatchNormalization
 
 from .layers import RegionProposal
 
@@ -30,18 +32,32 @@ class RegionProposalNet():
         if prev_layers is not None:
             prevs = prev_layers
 
-        intermediate = Conv2D(256, 3, strides=3, activation="relu", padding='same'
+        #intermediate = Conv2D(256, 3, strides=3, activation="relu", padding='same'
+        inter = Conv2D(256, 3, padding='same'
+                              , kernel_initializer='he_uniform'
                               , trainable=self.__trainable)(prevs)
 
-        cls_layer = Conv2D(2 * box_by_anchor, 1, activation="relu"
+        inter_bn = BatchNormalization()(inter)
+        intermediate = Activation('relu')(inter_bn)
+
+        #cls_layer = Conv2D(2 * box_by_anchor, 1, activation="relu"
+        cls_layer = Conv2D(2 * box_by_anchor, 1
+                           , kernel_initializer='glorot_uniform'
                            , trainable=self.__trainable)(intermediate)
+        cls_layer_bn = BatchNormalization()(cls_layer)
+        cls_layer = Activation('linear')(cls_layer_bn)
 
         # [B, h, w, box_by_anchor * 2] -> [B, anchor boxes, 2]
         cls_logits = Reshape([-1, 2])(cls_layer)
         cls_probs = Activation('softmax')(cls_logits)
 
-        reg_layer = Conv2D(4 * box_by_anchor, 1, activation="relu"
+        #reg_layer = Conv2D(4 * box_by_anchor, 1, activation="relu"
+        reg_layer = Conv2D(4 * box_by_anchor, 1
+                           , kernel_initializer='he_uniform'
                            , trainable=self.__trainable)(intermediate)
+        reg_layer_bn = BatchNormalization()(reg_layer)
+        cls_layer = Activation('linear')(reg_layer_bn)
+
 
         # [B, h, w, box_by_anchor * 4] -> [B, anchor boxes, 4]
         regions = Reshape([-1, 4])(reg_layer)

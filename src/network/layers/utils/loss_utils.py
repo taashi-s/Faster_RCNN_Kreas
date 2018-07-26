@@ -9,7 +9,9 @@ def class_labels_mean_loss(labels, preds):
     """
     Class Labels mean loss
     """
+
     loss = KB.sparse_categorical_crossentropy(labels, preds)
+#    loss = tf.Print(loss, [loss], '\n@@@ [LossUtile](class_loss) loss : \n', summarize=1024)
     return losses_mean(loss)
 
 
