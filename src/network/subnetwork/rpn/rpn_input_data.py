@@ -57,7 +57,6 @@ def __create_anchors(pos_ws, pos_hs, shift_xs, shift_ys):
 
     centers = np.stack([centers_y, centers_x], axis=2).reshape([-1, 2])
     sizes = np.stack([heights, widths], axis=2).reshape([-1, 2])
-    aaa = np.concatenate([centers - 0.5 * sizes, centers + 0.5 * sizes], axis=1).astype('float32')
     return np.concatenate([centers - 0.5 * sizes, centers + 0.5 * sizes], axis=1).astype('float32')
 
 

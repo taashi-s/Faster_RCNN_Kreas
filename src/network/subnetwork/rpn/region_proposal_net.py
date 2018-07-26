@@ -40,23 +40,23 @@ class RegionProposalNet():
         inter_bn = BatchNormalization()(inter)
         intermediate = Activation('relu')(inter_bn)
 
-        #cls_layer = Conv2D(2 * box_by_anchor, 1, activation="relu"
+        #cls_layer = Conv2D(2 * box_by_anchor, 1, activation="linear"
         cls_layer = Conv2D(2 * box_by_anchor, 1
                            , kernel_initializer='glorot_uniform'
                            , trainable=self.__trainable)(intermediate)
-        cls_layer_bn = BatchNormalization()(cls_layer)
-        cls_layer = Activation('linear')(cls_layer_bn)
+#        cls_layer = BatchNormalization()(cls_layer)
+        cls_layer = Activation('linear')(cls_layer)
 
         # [B, h, w, box_by_anchor * 2] -> [B, anchor boxes, 2]
         cls_logits = Reshape([-1, 2])(cls_layer)
         cls_probs = Activation('softmax')(cls_logits)
 
-        #reg_layer = Conv2D(4 * box_by_anchor, 1, activation="relu"
+        #reg_layer = Conv2D(4 * box_by_anchor, 1, activation="linear"
         reg_layer = Conv2D(4 * box_by_anchor, 1
                            , kernel_initializer='he_uniform'
                            , trainable=self.__trainable)(intermediate)
-        reg_layer_bn = BatchNormalization()(reg_layer)
-        cls_layer = Activation('linear')(reg_layer_bn)
+        reg_layer = BatchNormalization()(reg_layer)
+        reg_layer = Activation('linear')(reg_layer)
 
 
         # [B, h, w, box_by_anchor * 4] -> [B, anchor boxes, 4]
