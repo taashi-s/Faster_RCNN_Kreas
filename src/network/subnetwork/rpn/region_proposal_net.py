@@ -33,18 +33,18 @@ class RegionProposalNet():
             prevs = prev_layers
 
         #intermediate = Conv2D(256, 3, strides=3, activation="relu", padding='same'
-        inter = Conv2D(256, 3, padding='same'
+        intermediate = Conv2D(256, 3, padding='same'
                               , kernel_initializer='he_uniform'
                               , trainable=self.__trainable)(prevs)
 
-        inter_bn = BatchNormalization()(inter)
-        intermediate = Activation('relu')(inter_bn)
+        intermediate = BatchNormalization()(intermediate)
+        intermediate = Activation('relu')(intermediate)
 
         #cls_layer = Conv2D(2 * box_by_anchor, 1, activation="linear"
         cls_layer = Conv2D(2 * box_by_anchor, 1
                            , kernel_initializer='glorot_uniform'
                            , trainable=self.__trainable)(intermediate)
-#        cls_layer = BatchNormalization()(cls_layer)
+        cls_layer = BatchNormalization()(cls_layer)
         cls_layer = Activation('linear')(cls_layer)
 
         # [B, h, w, box_by_anchor * 2] -> [B, anchor boxes, 2]
